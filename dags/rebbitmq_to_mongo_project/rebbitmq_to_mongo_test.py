@@ -31,10 +31,13 @@ def callback_rebbit():
         #     rmq_channel.stop_consuming()
 
         # customer_set = on_message(rmq_channel, 'MDB_WhoIs_queue_customer_v1', set())
-        customer_set = on_message(rmq_channel, 'test_1_1', set())
-        print(customer_set)
+        return on_message(rmq_channel, 'test_1_1', set())
+
+
+def load_mongo():
+    pass
 
 
 if __name__ == '__main__':
-    callback_rebbit()
+    # callback_rebbit()
     # print(1)
