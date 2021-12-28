@@ -1,16 +1,23 @@
 from airflow.decorators import dag, task
+from airflow.models.baseoperator import chain
 from airflow.utils.dates import days_ago
+from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import callback_rebbit
 
 
 @dag(
-    default_args={'owner': 'airflow'},
+    default_args={
+        'owner': 'airflow',
+    },
+    dag_id='rebbitmq_to_mongo',
+    tags=['rebbitmq', 'mongo'],
     schedule_interval=None,
-    start_date=days_ago(2)
+    start_date=days_ago(2),
+    catchup=False
 )
-def tutorial_taskflow_api_etl():
+def customer_etl():
     @task
     def extract():
-        return {"1001": 301.27, "1002": 433.21, "1003": 502.22}
+        callback_rebbit()
 
     @task
     def transform(order_data_dict: dict) -> dict:
@@ -21,13 +28,13 @@ def tutorial_taskflow_api_etl():
 
         return {"total_order_value": total_order_value}
 
-    @task()
+    @task
     def load(total_order_value: float):
         print("Total order value is: %.2f" % total_order_value)
 
-    order_data = extract()
-    order_summary = transform(order_data)
-    load(order_summary["total_order_value"])
+    extract()
+    # order_summary = transform(order_data)
+    # load(order_summary["total_order_value"])
 
 
 tutorial_etl_dag = tutorial_taskflow_api_etl()
