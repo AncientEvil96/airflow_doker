@@ -34,10 +34,7 @@ def callback_rebbit():
         return on_message(rmq_channel, 'test_1_1', set())
 
 
-def load_mongo():
-    pass
-
-
 if __name__ == '__main__':
+    pass
     # callback_rebbit()
     # print(1)
