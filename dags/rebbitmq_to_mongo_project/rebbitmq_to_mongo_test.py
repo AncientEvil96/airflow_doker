@@ -51,7 +51,7 @@ def load_pymongo(load_list: list, **connection):
     host = connection.pop('host')  # '84.38.187.211'
     port = connection.pop('port')  # 27017
     schema = connection.pop('schema')  # 'info_checks'
-    database = connection.pop('database')  # 'customer'
+    database = connection.pop('database')  # 'customers'
     login = connection.pop('login')  # 'transfer'
     password = connection.pop('password')  # 'QXm6ditoC06BaoA6iZbS'
 
