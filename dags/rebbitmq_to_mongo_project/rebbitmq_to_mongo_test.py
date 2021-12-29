@@ -31,8 +31,8 @@ def on_message(rmq_channel, queue: str, customer: list = list()) -> list:
             return customer
 
 
-def callback_rebbit():
-    rmq_url_connection_str = 'amqp://guest:F1aw2Qh33beV@prod-srv1.tkvprok.ru:5672'
+def callback_rebbit(srv, login, password):
+    rmq_url_connection_str = f'amqp://{login}:{password}@{srv}:5672'
     rmq_parameters = pika.URLParameters(rmq_url_connection_str)
     with pika.BlockingConnection(rmq_parameters) as rmq_connection:
         rmq_channel = rmq_connection.channel()
@@ -127,9 +127,7 @@ def update_pymongo(load_doc: dict):
 
 
 if __name__ == '__main__':
-    # pass
     my_list = callback_rebbit()
-    # callback_rebbit()
     print(len(my_list))
     load_pymongo(
         my_list,
@@ -140,6 +138,3 @@ if __name__ == '__main__':
         login='transfer',
         password='QXm6ditoC06BaoA6iZbS'
     )
-
-    # load_2(callback_rebbit())
-    # print(1)

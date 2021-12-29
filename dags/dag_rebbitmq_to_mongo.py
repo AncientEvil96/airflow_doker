@@ -7,6 +7,9 @@ from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import callback_rebbit, lo
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
 mongo_pass = Variable.get("secret_mongo_pass")
+rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
+rebbit_login = Variable.get("rebbit_login")
+rebbit_pass = Variable.get("secret_rebbit_pass")
 
 
 @dag(
@@ -21,16 +24,15 @@ mongo_pass = Variable.get("secret_mongo_pass")
 )
 def customer_to_mongo_etl():
     @task
-    def extract():
-        return callback_rebbit()
+    def extract(srv, rebbit_login, rebbit_pass):
+        return callback_rebbit(srv, rebbit_login, rebbit_pass)
 
-    @task
-    def transform(set_message: set) -> list:
-        pass
+    # @task
+    # def transform(set_message: set) -> list:
+    #     pass
 
     @task
     def load(list_message: list):
-
         load_pymongo(
             list_message,
             host=mongo_connect['host'],
@@ -64,10 +66,11 @@ def customer_to_mongo_etl():
         # )
         # mongo.insert_many(list_message)
 
-    list_message = extract()
-    # list_message = extract()
-    # list_message = transform(set_message)
-    load(list_message)
+    for srv in rebbit_srv:
+        list_message = extract(srv, rebbit_login, rebbit_pass)
+        # list_message = extract()
+        # list_message = transform(set_message)
+        load(list_message)
 
 
 tutorial_etl_dag = customer_to_mongo_etl()
