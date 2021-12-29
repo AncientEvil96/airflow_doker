@@ -12,21 +12,16 @@ from pymongo import MongoClient
 
 
 def on_message(rmq_channel, queue: str, customer: list = list()) -> list:
-    i = 0
     while True:
-        i += 1
         method_frame, header_frame, body = rmq_channel.basic_get(queue)
         if method_frame:
             try:
                 # Если журнала нет, объект, возвращаемый в кортеж, будет None
                 customer.append(json.loads(body.decode('UTF-8')))
-                # rmq_channel.basic_ack(method_frame.delivery_tag)
+                rmq_channel.basic_ack(method_frame.delivery_tag)
                 # on_message(rmq_channel, queue, customer_set)
             except Exception as err:
                 print(err, json.loads(body.decode('UTF-8')))
-
-            if i == 100:
-                return customer
         else:
             return customer
 
