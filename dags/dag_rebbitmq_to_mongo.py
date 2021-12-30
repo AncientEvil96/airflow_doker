@@ -4,6 +4,7 @@ from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import callback_rebbit, load_pymongo
+from datetime import datetime, timedelta
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
 mongo_pass = Variable.get("secret_mongo_pass")
@@ -15,10 +16,16 @@ rebbit_pass = Variable.get("secret_rebbit_pass")
 @dag(
     default_args={
         'owner': 'airflow',
+        'email': ['bersek123@gmail.com'],
+        'email_on_failure': False,
+        'email_on_retry': False,
+        'retries': 0,
+
     },
     dag_id='rebbitmq_to_mongo',
     tags=['rebbitmq', 'mongo'],
-    schedule_interval=None,
+    # schedule_interval='*/30 * * * * *',
+    schedule_interval=timedelta(seconds=30),
     start_date=days_ago(2),
     catchup=False
 )
