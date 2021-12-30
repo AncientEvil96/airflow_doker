@@ -4,6 +4,7 @@ from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import callback_rebbit, load_pymongo
+
 # from datetime import datetime, timedelta
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
@@ -11,7 +12,9 @@ mongo_pass = Variable.get("secret_mongo_pass")
 rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
 rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
-list_queue = Variable.get("rebbit_queue", deserialize_json=True)
+
+
+# list_queue = Variable.get("rebbit_queue", deserialize_json=True)
 
 @dag(
     default_args={
@@ -74,10 +77,8 @@ def customer_to_mongo_etl():
         # mongo.insert_many(list_message)
 
     for srv in rebbit_srv:
-        for queue in list_queue:
-
-            list_message = extract(srv, queue, rebbit_login, rebbit_pass)
-            load(list_message)
+        list_message = extract(srv, 'MDB_WhoIs_queue_customer_v1', rebbit_login, rebbit_pass)
+        load(list_message)
 
 
 tutorial_etl_dag = customer_to_mongo_etl()
