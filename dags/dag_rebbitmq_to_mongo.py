@@ -4,14 +4,14 @@ from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import callback_rebbit, load_pymongo
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
 mongo_pass = Variable.get("secret_mongo_pass")
 rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
 rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
-
+list_queue = Variable.get("rebbit_queue", deserialize_json=True)
 
 @dag(
     default_args={
@@ -20,19 +20,19 @@ rebbit_pass = Variable.get("secret_rebbit_pass")
         'email_on_failure': False,
         'email_on_retry': False,
         'retries': 0,
-
     },
     dag_id='rebbitmq_to_mongo',
     tags=['rebbitmq', 'mongo'],
     # schedule_interval='*/30 * * * * *',
-    schedule_interval=timedelta(seconds=30),
+    schedule_interval='*/1 * * * *',
+    # schedule_interval=timedelta(seconds=30),
     start_date=days_ago(2),
     catchup=False
 )
 def customer_to_mongo_etl():
     @task
-    def extract(srv, rebbit_login, rebbit_pass):
-        return callback_rebbit(srv, rebbit_login, rebbit_pass)
+    def extract(srv, queue, rebbit_login, rebbit_pass):
+        return callback_rebbit(srv, queue, rebbit_login, rebbit_pass)
 
     # @task
     # def transform(set_message: set) -> list:
@@ -74,10 +74,10 @@ def customer_to_mongo_etl():
         # mongo.insert_many(list_message)
 
     for srv in rebbit_srv:
-        list_message = extract(srv, rebbit_login, rebbit_pass)
-        # list_message = extract()
-        # list_message = transform(set_message)
-        load(list_message)
+        for queue in list_queue:
+
+            list_message = extract(srv, queue, rebbit_login, rebbit_pass)
+            load(list_message)
 
 
 tutorial_etl_dag = customer_to_mongo_etl()
