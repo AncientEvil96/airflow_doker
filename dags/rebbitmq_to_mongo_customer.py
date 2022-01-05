@@ -3,7 +3,7 @@ from airflow.decorators import dag, task
 # from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
-from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import callback_rebbit, load_pymongo
+from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import RebbitMongoETL
 
 # from datetime import datetime, timedelta
 
@@ -12,6 +12,14 @@ mongo_pass = Variable.get("secret_mongo_pass")
 rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
 rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
+
+
+# host = connection.pop('host')  # '84.38.187.211'
+# port = connection.pop('port')  # 27017
+# schema = connection.pop('schema')  # 'info_checks'
+# database = connection.pop('database')  # 'customers'
+# login = connection.pop('login')  # 'transfer'
+# password = connection.pop('password')  # 'QXm6ditoC06BaoA6iZbS'
 
 
 # list_queue = Variable.get("rebbit_queue", deserialize_json=True)
@@ -28,18 +36,14 @@ rebbit_pass = Variable.get("secret_rebbit_pass")
     tags=['rebbitmq', 'mongo'],
     # schedule_interval='*/30 * * * * *',
     schedule_interval='*/1 * * * *',
-    # schedule_interval=timedelta(seconds=30),
+    # schedule_interval=timedelta(seconds=15),
     start_date=days_ago(2),
     catchup=False
 )
 def customer_to_mongo_etl():
     @task
-    def extract(srv, queue, rebbit_login, rebbit_pass):
+    def extract():
         return callback_rebbit(srv, queue, rebbit_login, rebbit_pass)
-
-    # @task
-    # def transform(set_message: set) -> list:
-    #     pass
 
     @task
     def load(list_message: list):
@@ -76,9 +80,14 @@ def customer_to_mongo_etl():
         # )
         # mongo.insert_many(list_message)
 
+
     for srv in rebbit_srv:
-        list_message = extract(srv, 'MDB_WhoIs_queue_customer_v1', rebbit_login, rebbit_pass)
-        load(list_message)
+        for base in bases:
+            rebbitmq = {}
+            mongodb = {}
+            RebbitMongoETL(rebbitmq=rebbitmq, mongodb=mongodb)
+            list_message = extract()
+            load(list_message)
 
 
 tutorial_etl_dag = customer_to_mongo_etl()

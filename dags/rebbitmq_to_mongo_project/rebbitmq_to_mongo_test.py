@@ -10,126 +10,101 @@ from pymongo import MongoClient
 #     if ack:
 #         channel.basic_ack(method.delivery_tag)
 
+class RebbitMongoETL:
+    def __init__(self, **kwargs):
+        """
+        rebbitmq:
+        :param kwargs:
+        host:
+        queue:
+        password:
+        login:
 
-def on_message(rmq_channel, queue: str, customer: list = list()) -> list:
-    while True:
-        method_frame, header_frame, body = rmq_channel.basic_get(queue)
-        if method_frame:
-            try:
-                # Если журнала нет, объект, возвращаемый в кортеж, будет None
-                customer.append(json.loads(body.decode('UTF-8')))
-                rmq_channel.basic_ack(method_frame.delivery_tag)
-                # on_message(rmq_channel, queue, customer_set)
-            except Exception as err:
-                print(err, json.loads(body.decode('UTF-8')))
-        else:
-            return customer
+        mongodb:
+        :param kwargs:
+        host:
+        password:
+        login:
+        port:
+        schema:
+        database:
 
+        """
+        rebbitmq = kwargs.pop('rebbitmq')
+        self.rebbit_host = rebbitmq.pop('host')
+        self.__rebbit_password = rebbitmq.pop('password')
+        self.__rebbit_login = rebbitmq.pop('login')
+        self.rebbit_queue = rebbitmq.pop('queue')
 
-def callback_rebbit(srv, queue, login, password):
-    rmq_url_connection_str = f'amqp://{login}:{password}@{srv}:5672'
-    rmq_parameters = pika.URLParameters(rmq_url_connection_str)
-    with pika.BlockingConnection(rmq_parameters) as rmq_connection:
-        rmq_channel = rmq_connection.channel()
-        # rmq_channel.basic_consume('MDB_WhoIs_queue_customer_v1', on_message)
-        # try:
-        #     rmq_channel.start_consuming()
-        #     # Постоянно контролировать очередь в методе блокировки
-        # except KeyboardInterrupt:
-        #     rmq_channel.stop_consuming()
+        mongodb = kwargs.pop('mongodb')
+        self.mongo_host = mongodb.pop('host')
+        self.__mongo_password = mongodb.pop('password')
+        self.__mongo_login = mongodb.pop('login')
+        self.mongo_port = mongodb.pop('port')
+        self.mongo_schema = mongodb.pop('schema')
+        self.mongo_database = mongodb.pop('database')
 
-        # customer_set = on_message(rmq_channel, 'MDB_WhoIs_queue_customer_v1', set())
-        return on_message(rmq_channel, queue)
+    def on_message(self, rmq_channel) -> list:
+        """
 
+        :param rmq_channel:
+        :return:
+        """
+        queue_list = []
+        while True:
+            method_frame, header_frame, body = rmq_channel.basic_get(self.rebbit_queue)
+            if method_frame:
+                try:
+                    # Если журнала нет, объект, возвращаемый в кортеж, будет None
+                    queue_list.append(json.loads(body.decode('UTF-8')))
+                    rmq_channel.basic_ack(method_frame.delivery_tag)
+                except Exception as err:
+                    print(err, json.loads(body.decode('UTF-8')))
+            else:
+                return queue_list
 
-def load_pymongo(load_list: list, **connection):
-    host = connection.pop('host')  # '84.38.187.211'
-    port = connection.pop('port')  # 27017
-    schema = connection.pop('schema')  # 'info_checks'
-    database = connection.pop('database')  # 'customers'
-    login = connection.pop('login')  # 'transfer'
-    password = connection.pop('password')  # 'QXm6ditoC06BaoA6iZbS'
+    def callback_rebbit(self):
+        rmq_url_connection_str = f'amqp://{self.__rebbit_login}:{self.__rebbit_password}@{self.rebbit_host}:5672'
+        rmq_parameters = pika.URLParameters(rmq_url_connection_str)
+        with pika.BlockingConnection(rmq_parameters) as rmq_connection:
+            rmq_channel = rmq_connection.channel()
+            return self.on_message(rmq_channel)
 
-    url = f'mongodb://{login}:{password}@{host}:{port}/{schema}'
+    def load_pymongo(self, load_list: list):
+        url = f'mongodb://{self.__mongo_login}:{self.__mongo_password}@{self.mongo_host}:{self.mongo_port}/{self.mongo_schema}'
 
-    with MongoClient(url) as client:
-        base = client[schema]
-        collection = base[database]
-        # collection.insert_many(load_list)
-        for load_doc in load_list:
-            try:
-                collection.update_one({'uuid': {'$eq': load_doc['uuid']}}, {'$set': load_doc}, upsert=True)
-            except Exception as err:
-                print(err, load_doc)
-
-
-def update_pymongo(load_doc: dict):
-    host = '84.38.187.211'
-    port = 27017
-    schema = 'info_checks'
-    database = 'checks'
-    login = 'transfer'
-    password = 'QXm6ditoC06BaoA6iZbS'
-
-    url = f'mongodb://{login}:{password}@{host}:{port}/{schema}'
-
-    try:
         with MongoClient(url) as client:
-            base = client[schema]
-            collection = base[database]
-            collection.update_one({'uuid': {'$eq': load_doc['uuid']}}, load_doc, upsert=True)
+            base = client[self.mongo_schema]
+            collection = base[self.mongo_database]
+            for load_doc in load_list:
+                try:
+                    collection.update_one({'uuid': {'$eq': load_doc['uuid']}}, {'$set': load_doc}, upsert=True)
+                except Exception as err:
+                    print(err, load_doc)
 
-        return True
-    except Exception as err:
-        print(err, load_doc)
-        return False
-
-
-# def load_2(list_message: list):
-#     host = '84.38.187.211'
-#     port = 27017
-#     schema = 'info_checks'
-#     database = 'checks'
-#     login = 'transfer'
-#     password = 'QXm6ditoC06BaoA6iZbS'
-#
-#     url = f'mongodb://{login}:{password}@{host}:{port}/{schema}'
-#
-#     mongo = MongoHook(
-#         'mongodb',
-#         connection={
-#             'port': port,
-#             'host': host,
-#             'login': login,
-#             'password': password,
-#             'database': database
-#         }
-#     )
-#     mongo.uri = url
-#     #     '',
-#     #     connection={
-#     #         'port': port,
-#     #         'host': server_mongo,
-#     #         'login': login,
-#     #         'password': password,
-#     #         'database': database
-#     #     },
-#     #     # extras={
-#     #     #     'srv': schema
-#     #     # }
-#     # )
-#     mongo.insert_many(list_message)
+    def update_pymongo(self, load_doc: dict):
+        url = f'mongodb://{self.__mongo_login}:{self.__mongo_password}@{self.mongo_host}:{self.mongo_port}/{self.mongo_schema}'
+        try:
+            with MongoClient(url) as client:
+                base = client[self.mongo_schema]
+                collection = base[self.mongo_database]
+                collection.update_one({'uuid': {'$eq': load_doc['uuid']}}, load_doc, upsert=True)
+            return True
+        except Exception as err:
+            print(err, load_doc)
+            return False
 
 
 if __name__ == '__main__':
-    my_list = callback_rebbit()
-    print(len(my_list))
-    load_pymongo(
-        my_list,
-        host='84.38.187.211',
-        port=27017,
-        schema='info_checks',
-        database='checks',
-        login='transfer',
-        password='QXm6ditoC06BaoA6iZbS'
-    )
+    pass
+    # my_list = callback_rebbit()
+    # print(len(my_list))
+    # load_pymongo(
+    #     my_list,
+    #     host='84.38.187.211',
+    #     port=27017,
+    #     schema='info_checks',
+    #     database='checks',
+    #     login='transfer',
+    #     password='QXm6ditoC06BaoA6iZbS'
+    # )
