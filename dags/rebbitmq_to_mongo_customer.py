@@ -12,6 +12,7 @@ mongo_pass = Variable.get("secret_mongo_pass")
 rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
 rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
+mongo_bases = ''
 
 
 # host = connection.pop('host')  # '84.38.187.211'
@@ -42,20 +43,22 @@ rebbit_pass = Variable.get("secret_rebbit_pass")
 )
 def customer_to_mongo_etl():
     @task
-    def extract():
-        return callback_rebbit(srv, queue, rebbit_login, rebbit_pass)
+    def extract(etl):
+        return etl.callback_rebbit()
 
     @task
-    def load(list_message: list):
-        load_pymongo(
-            list_message,
-            host=mongo_connect['host'],
-            port=mongo_connect['port'],
-            schema=mongo_connect['schema'],
-            database=mongo_connect['database'],
-            login=mongo_connect['login'],
-            password=mongo_pass
-        )
+    def load(etl, list_message: list):
+        etl.load_pymongo(list_message)
+
+        # load_pymongo(
+        #     list_message,
+        #     host=mongo_connect['host'],
+        #     port=mongo_connect['port'],
+        #     schema=mongo_connect['schema'],
+        #     database=mongo_connect['database'],
+        #     login=mongo_connect['login'],
+        #     password=mongo_pass
+        # )
         # server_mongo = '84.38.187.211'
         # port = 27017
         # schema = 'info_checks'
@@ -80,14 +83,14 @@ def customer_to_mongo_etl():
         # )
         # mongo.insert_many(list_message)
 
-
-    for srv in rebbit_srv:
-        for base in bases:
-            rebbitmq = {}
-            mongodb = {}
-            RebbitMongoETL(rebbitmq=rebbitmq, mongodb=mongodb)
-            list_message = extract()
-            load(list_message)
+    for rebbitmq in rebbit_srv:
+        rebbitmq['password'] = rebbit_pass
+        for mongodb in mongo_bases:
+            rebbitmq['queue'] = ''
+            mongodb['database'] = ''
+            etl = RebbitMongoETL(rebbitmq=rebbitmq, mongodb=mongodb)
+            list_message = extract(etl)
+            load(etl, list_message)
 
 
 tutorial_etl_dag = customer_to_mongo_etl()
