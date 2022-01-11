@@ -2,6 +2,7 @@ from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from rebbitmq_to_mongo_project.rebbitmq_to_mongo_test import RebbitMongoETL
+from copy import deepcopy
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
 mongo_pass = Variable.get("secret_mongo_pass")
@@ -19,7 +20,7 @@ rebbit_pass = Variable.get("secret_rebbit_pass")
         'retries': 0,
     },
     dag_id='rebbitmq_to_mongo',
-    tags=['rebbitmq', 'mongo'],
+    tags=['rebbitmq', 'mongo', 'customer', 'checks'],
     schedule_interval='*/1 * * * *',
     start_date=days_ago(2),
     catchup=False
@@ -40,7 +41,7 @@ def customer_to_mongo_etl():
             rebbitmq['queue'] = mongodb['queue']
             mongodb['login'] = mongo_login
             mongodb['password'] = mongo_pass
-            etl = RebbitMongoETL(rebbitmq=rebbitmq, mongodb=mongodb)
+            etl = RebbitMongoETL(rebbitmq=deepcopy(rebbitmq), mongodb=deepcopy(mongodb))
             list_message = extract(etl)
             load(etl, list_message)
 

@@ -1,7 +1,7 @@
 import pika
 import json
+# import copy
 from pymongo import MongoClient
-
 
 # def on_message(channel, method, properties, body):
 #     message = json.loads(body.decode('UTF-8'))
@@ -97,14 +97,13 @@ class RebbitMongoETL:
 
 if __name__ == '__main__':
     pass
-    # my_list = callback_rebbit()
-    # print(len(my_list))
-    # load_pymongo(
-    #     my_list,
-    #     host='84.38.187.211',
-    #     port=27017,
-    #     schema='info_checks',
-    #     database='checks',
-    #     login='transfer',
-    #     password='QXm6ditoC06BaoA6iZbS'
-    # )
+    # for rebbitmq in rebbit_srv:
+    #     rebbitmq['password'] = rebbit_pass
+    #     rebbitmq['login'] = rebbit_login
+    #     for mongodb in mongo_connect:
+    #         rebbitmq['queue'] = mongodb['queue']
+    #         mongodb['login'] = mongo_login
+    #         mongodb['password'] = mongo_pass
+    #         etl = RebbitMongoETL(rebbitmq=copy.deepcopy(rebbitmq), mongodb=copy.deepcopy(mongodb))
+    #         list_message = etl.callback_rebbit()
+    #         etl.load_pymongo(list_message)
