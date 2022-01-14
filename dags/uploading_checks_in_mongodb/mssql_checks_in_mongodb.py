@@ -77,7 +77,8 @@ def checks_ms_in_mongo():
         return sourse.select_db_df(query)
 
     @task(task_id='transform')
-    def transform(df):
+    def transform(file):
+
         return file_path
 
     @task(task_id='load')
