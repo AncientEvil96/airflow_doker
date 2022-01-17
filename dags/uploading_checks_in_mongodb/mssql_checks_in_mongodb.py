@@ -30,6 +30,7 @@ def checks_ms_in_mongo():
     t_begin = '{{ ds }}'
     t_end = '{{ ds }}'
 
+    print(ms_connect)
     print(t_begin, t_end)
 
     query = f"""
