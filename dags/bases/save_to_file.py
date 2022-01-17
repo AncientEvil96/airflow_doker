@@ -5,10 +5,10 @@ class SaveFile:
             if len(df) == 0:
                 return None
 
-            ffn = file_name = f'{file_name}.parquet.gzip'
-            df.to_parquet(ffn, compression='gzip')
+            file_name = f'{file_name}.parquet.gzip'
+            df.to_parquet(file_name, compression='gzip')
             print(f'Created {file_name}')
-            return ffn
+            return file_name
         except Exception as err:
             print(err, ':', file_name)
             return None

@@ -35,7 +35,9 @@ class MsSQL:
 
         with pyodbc.connect(self.conn_ms) as cnxn:
             sf = SaveFile()
+            df = pd.read_sql(query, cnxn)
+
             return sf.create_file_parquet(
-                df=pd.read_sql(query, cnxn),
+                df=df,
                 file_name=f'{file_name}'
             )

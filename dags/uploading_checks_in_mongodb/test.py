@@ -3,11 +3,15 @@ from dags.bases.save_to_file import SaveFile
 from dags.bases.ms import MsSQL
 from datetime import datetime
 
+
 def transform(file):
     df = pd.read_parquet(file)
-    print(df)
+
+    for i, row in df.iterrows():
+        print(row)
+
     sf = SaveFile()
-    return sf.create_file_parquet(df=df, file_name=file)
+    return sf.create_file_parquet(df=df, file_name=file.replace('.parquet.gzip', ''))
 
 
 def load(file):
@@ -38,10 +42,10 @@ if __name__ == '__main__':
     t_end = str(datetime(dd.year + 2000, dd.month, dd.day, 23, 59, 59))
 
     query = f"""
-        SELECT top 100 substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid
+        SELECT top 100 substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid_db
               ,CONVERT(int, [_Document16].[_Marked]) as del_mark
               ,DATEADD(year, -2000 ,[_Date_Time]) as created_at
-              ,[_NumberPrefix] as prefix
+              ,DATEADD(year, -2000 ,[_NumberPrefix]) as prefix
               ,[_Number] as number
               ,CONVERT(int, [_Posted]) as posted
               ,[_Fld564] as uuid
@@ -70,9 +74,9 @@ if __name__ == '__main__':
               ,[_Fld142] as type_pay
               ,[_Fld445] as discount_compass
         FROM [ChekKKM].[dbo].[_Document16]
-            LEFT JOIN [dbo].[_Reference37] AS [_Reference37]
+            LEFT JOIN [ChekKKM].[dbo].[_Reference37] AS [_Reference37]
             ON [_Document16].[_Fld19RRef] = [_Reference37].[_IDRRef]
-            INNER JOIN [dbo].[_Reference73] AS [_Reference73]
+            INNER JOIN [ChekKKM].[dbo].[_Reference73] AS [_Reference73]
             ON [_Document16].[_Fld117RRef] = [_Reference73].[_IDRRef]
         WHERE [_Posted] = 1
         and [_Document16].[_Date_Time] between '{t_begin}' and '{t_end}'
@@ -86,6 +90,6 @@ if __name__ == '__main__':
     }
 
     sourse = MsSQL(params=ms_connect)
-    file = sourse.select_db_df(query, t_begin)
-    # file = transform(file)
+    file = sourse.select_db_df(query, f'ch_{(dd.year - 2000):03}_{dd.month:03}_{dd.day:03}')
+    file = transform(file)
     # load(file)
