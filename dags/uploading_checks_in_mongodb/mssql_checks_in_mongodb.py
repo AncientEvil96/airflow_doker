@@ -6,6 +6,7 @@ from ..bases.mongo import Mongo
 from airflow.models import Variable
 from copy import deepcopy
 
+
 ms_connect = Connection(conn_id='MS_ChekKKM')
 mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 mongo_pass = Variable.get('secret_mongo_pass')
