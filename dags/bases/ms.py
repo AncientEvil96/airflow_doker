@@ -1,7 +1,6 @@
 import pyodbc
 import pandas as pd
-import datetime
-from save_to_file import SaveFile
+from ..bases.save_to_file import SaveFile
 
 
 class MsSQL:
@@ -28,7 +27,7 @@ class MsSQL:
                        f";UID={self.__login}" \
                        f";PWD={self.__password}"
 
-    def select_db_df(self, query) -> str:
+    def select_db_df(self, query, file_name) -> str:
         """
         получение данных в формате DataFrame
         :return: file path
@@ -38,5 +37,5 @@ class MsSQL:
             sf = SaveFile()
             return sf.create_file_parquet(
                 df=pd.read_sql(query, cnxn),
-                file_name=f'{datetime.date.today().strftime("%Y_%m_%d_%H_%M_%S")}'
+                file_name=f'{file_name}'
             )

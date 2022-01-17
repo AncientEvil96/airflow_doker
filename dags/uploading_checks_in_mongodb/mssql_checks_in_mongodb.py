@@ -62,13 +62,13 @@ def checks_ms_in_mongo():
     	  ,[_Fld586] as manager_name
           ,[_Fld142] as type_pay
           ,[_Fld445] as discount_compass
-      FROM [ChekKKM].[dbo].[_Document16]
-    	LEFT JOIN [dbo].[_Reference37] AS [_Reference37]
+    FROM [ChekKKM].[dbo].[_Document16]
+        LEFT JOIN [dbo].[_Reference37] AS [_Reference37]
         ON [_Document16].[_Fld19RRef] = [_Reference37].[_IDRRef]
-    	INNER JOIN [dbo].[_Reference73] AS [_Reference73]
+        INNER JOIN [dbo].[_Reference73] AS [_Reference73]
         ON [_Document16].[_Fld117RRef] = [_Reference73].[_IDRRef]
-      WHERE [_Posted] = 1
-      and [_Document16].[_Date_Time] between '{t_begin}' and '{t_end}'
+    WHERE [_Posted] = 1
+    and [_Document16].[_Date_Time] between '{t_begin}' and '{t_end}'
     """
 
     @task(task_id='extract')
