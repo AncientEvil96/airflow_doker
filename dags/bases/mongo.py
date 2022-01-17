@@ -25,7 +25,7 @@ class Mongo:
         self.mongo_schema = mongodb.pop('schema')
         self.mongo_database = mongodb.pop('database')
 
-    def update_mongo(self, load_list: dict):
+    def update_mongo(self, load_list: list):
         url = f'mongodb://{self.__mongo_login}:{self.__mongo_password}@{self.mongo_host}:{self.mongo_port}/{self.mongo_schema}'
 
         with MongoClient(url) as client:

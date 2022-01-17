@@ -2,13 +2,15 @@ import pandas as pd
 from dags.bases.save_to_file import SaveFile
 from dags.bases.ms import MsSQL
 from datetime import datetime
+from dags.bases.mongo import Mongo
+from json import loads
 
 
 def transform(file):
     df = pd.read_parquet(file)
 
     for i, row in df.iterrows():
-        print(row)
+        print(list(row))
 
     sf = SaveFile()
     return sf.create_file_parquet(df=df, file_name=file.replace('.parquet.gzip', ''))
@@ -16,23 +18,18 @@ def transform(file):
 
 def load(file):
     df = pd.read_parquet(file)
-    full_list = []
-    for i, row in df.iterrows():
-        line_d = {
-            'uuid': row['uuid'],
-            'phone': row['phone'],
-            'shop_name': row['shop_name'],
-            'product_name': row['product_name'],
-            'created_at': str(row['created_at'].date()),
-            'refund': row['refund'],
-            'cancellation': row['cancellation'],
-            'shop_id': row['shop_id'],
-            'barcode': row['barcode'],
-            'product_id': row['product_id'],
-            'amount': row['amount'],
-            'price': row['price']
+    load_list = df.to_json(orient='records')
+    mongo = Mongo(
+        params={
+            "host": "84.38.187.211",
+            "port": "27017",
+            "schema": "info_checks",
+            "database": "checks",
+            "login": "transfer",
+            "password": "QXm6ditoC06BaoA6iZbS"
         }
-        full_list.append(line_d)
+    )
+    mongo.update_mongo(loads(load_list))
 
 
 if __name__ == '__main__':
@@ -46,7 +43,7 @@ if __name__ == '__main__':
               ,CONVERT(int, [_Document16].[_Marked]) as del_mark
               ,DATEADD(year, -2000 ,[_Date_Time]) as created_at
               ,DATEADD(year, -2000 ,[_NumberPrefix]) as prefix
-              ,[_Number] as number
+              ,CONVERT(bigint, [_Number]) as number
               ,CONVERT(int, [_Posted]) as posted
               ,[_Fld564] as uuid
               ,[_Fld90] as ip_cashbox
@@ -60,7 +57,7 @@ if __name__ == '__main__':
               ,CONVERT(int, [_Fld345]) as count_chips
               ,[_Fld242] as description
               ,CONVERT(bigint, [_Fld20]) as number_cashbox
-              ,CASE WHEN [_Reference73]._Description = '999-999-99-99' THEN NUll ELSE REPLACE([_Reference73]._Description,'-','') END as phone
+              ,CASE WHEN [_Reference73]._Description = '999-999-99-99' THEN NUll ELSE CONVERT(bigint, REPLACE([_Reference73]._Description,'-','')) END as phone
               ,CONVERT(int, [_Fld22]) as number_check
               ,CONVERT(int, [_Fld272]) as promo_code
               ,CONVERT(int, [_Fld164]) as r_number_check
@@ -91,5 +88,5 @@ if __name__ == '__main__':
 
     sourse = MsSQL(params=ms_connect)
     file = sourse.select_db_df(query, f'ch_{(dd.year - 2000):03}_{dd.month:03}_{dd.day:03}')
-    file = transform(file)
-    # load(file)
+    # file = transform(file)
+    load(file)
