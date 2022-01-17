@@ -81,10 +81,6 @@ def checks_ms_in_mongo():
         sourse = MsSQL(params=ms_connect)
         return sourse.select_db_df(query, '123')
 
-    # @task(task_id='transform')
-    # def transform(file):
-    #     return file_path
-
     @task(task_id='load')
     def load(file_path):
         mongodb = ''
@@ -92,9 +88,17 @@ def checks_ms_in_mongo():
 
         return target.callback_rebbit()
 
+    @task(task_id='transform')
+    def transform(file):
+        return file_path
+
+    @task(task_id='delete_file')
+    def transform(file):
+        return file_path
+
 
     file_path = extract(query)
-    # file_path = transform(file_path)
+    file_path = transform(file_path)
     load(file_path)
 
 tutorial_etl_dag = checks_ms_in_mongo()
