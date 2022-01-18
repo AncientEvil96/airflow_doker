@@ -1,6 +1,6 @@
 import pyodbc
 import pandas as pd
-from ..bases.operations_to_files import File
+from bases.operations_to_files import File
 
 
 class MsSQL:
@@ -36,7 +36,6 @@ class MsSQL:
         with pyodbc.connect(self.conn_ms) as cnxn:
             sf = File(f'{file_name}')
             df = pd.read_sql(query, cnxn)
-
             return sf.create_file_parquet(
                 df=df
             )
