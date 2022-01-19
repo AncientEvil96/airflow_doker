@@ -23,17 +23,12 @@ def _err_loading(**kwargs):
 
 def _delete_file(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
-
-    print(load_list)
-
     file = File(load_list)
     file.delete_file()
 
 
 def _load_insert_many(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
-
-    print(1111111111111111111111111111111111111111111111111111111111, load_list)
 
     df = pd.read_parquet(load_list)
     load_list = df.to_dict('records')
@@ -48,19 +43,17 @@ def _load_insert_many(**kwargs):
     mongodb['login'] = mongo_login
     mongodb['password'] = mongo_pass
 
-    try:
-        target = Mongo(params=deepcopy(mongodb))
-        target.insert_mongo(load_list)
-        return 'delete_file'
-    except Exception as err:
-        print(err)
-        return 'load_update'
+    # try:
+    target = Mongo(params=deepcopy(mongodb))
+    target.insert_mongo(load_list)
+        # return 'delete_file'
+    # except Exception as err:
+    #     print(err)
+    #     return 'load_update'
 
 
 def _load_update(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
-
-    print(load_list)
 
     mongodb = {}
     for line in mongo_connect:
@@ -265,16 +258,17 @@ def checks_ms_in_mongo():
         }
     )
 
-    err_loading = BranchPythonOperator(
-        task_id='err_loading',
-        python_callable=_err_loading,
-    )
+    # err_loading = BranchPythonOperator(
+    #     task_id='err_loading',
+    #     python_callable=_err_loading,
+    # )
 
-    next_step = DummyOperator(task_id='next_step')
+    # next_step = DummyOperator(task_id='next_step')
 
     delete_file = PythonOperator(
         task_id='delete_file',
-        python_callable=_delete_file
+        python_callable=_delete_file,
+        trigger_rule='all_success'
     )
 
     load_insert_many = PythonOperator(
@@ -295,12 +289,12 @@ def checks_ms_in_mongo():
 
     # data_list = extract(yesterday='{{ ds }}')
 
-    extract >> load_insert_many >> err_loading >> [load_update, next_step] >> delete_file
+    # extract >> load_insert_many >> err_loading >> [load_update, next_step] >> delete_file
     # load_update
 
-    # extract >> load_insert_many >> err_loading
-    # err_loading >> delete_file
-    # err_loading >> load_update >> delete_file
+    extract >> load_insert_many
+    load_insert_many >> delete_file
+    load_insert_many >> load_update >> delete_file
 
 
 tutorial_etl_dag = checks_ms_in_mongo()
