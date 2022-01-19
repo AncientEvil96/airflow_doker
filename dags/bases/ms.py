@@ -57,6 +57,4 @@ class MsSQL:
 
         with pyodbc.connect(self.conn_ms) as cnxn:
             df = pd.read_sql(query, cnxn)
-
-            df.to_timestamp()
             return df.to_dict('records')

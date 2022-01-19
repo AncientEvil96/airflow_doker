@@ -24,11 +24,11 @@ class Mongo:
         self.mongo_port = mongodb.pop('port')
         self.mongo_schema = mongodb.pop('schema')
         self.mongo_database = mongodb.pop('database')
+        self.__url = f'mongodb://{self.__mongo_login}:{self.__mongo_password}@{self.mongo_host}:{self.mongo_port}/{self.mongo_schema}'
 
     def update_mongo(self, load_list: list):
-        url = f'mongodb://{self.__mongo_login}:{self.__mongo_password}@{self.mongo_host}:{self.mongo_port}/{self.mongo_schema}'
 
-        with MongoClient(url) as client:
+        with MongoClient(self.__url) as client:
             base = client[self.mongo_schema]
             collection = base[self.mongo_database]
             for load_doc in load_list:
@@ -36,3 +36,9 @@ class Mongo:
                     collection.update_one({'uuid': {'$eq': load_doc['uuid']}}, {'$set': load_doc}, upsert=True)
                 except Exception as err:
                     print(err, load_doc)
+
+    def insert_mongo(self, load_list: list):
+        with MongoClient(self.__url) as client:
+            base = client[self.mongo_schema]
+            collection = base[self.mongo_database]
+            collection.insert_many(load_list)

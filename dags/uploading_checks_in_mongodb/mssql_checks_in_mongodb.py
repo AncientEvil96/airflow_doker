@@ -2,6 +2,8 @@ from airflow.models import Connection
 from airflow.decorators import dag, task
 from airflow.utils.dates import datetime, timedelta
 from airflow.models import Variable
+from airflow.operators.python import BranchPythonOperator
+from airflow.operators.dummy import DummyOperator
 from bases.ms import MsSQL
 from bases.mongo import Mongo
 from bases.operations_to_files import File
@@ -12,6 +14,11 @@ ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
 mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 mongo_pass = Variable.get('secret_mongo_pass')
 mongo_login = Variable.get('mongo_login')
+
+
+def _err_loading(**kwargs):
+    accuracy = kwargs['ti'].xcom_pull(key='return_value', task_ids=['load_insert_many'])
+    return accuracy
 
 
 @dag(
@@ -45,7 +52,7 @@ def checks_ms_in_mongo():
         t_end = t_begin + timedelta(days=1)
 
         query = f"""
-            SELECT TOP 100 substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid_db
+            SELECT substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid_db
                   ,CONVERT(int, [_Document16].[_Marked]) as del_mark
                   ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_Date_Time])) as created_at
 				  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_NumberPrefix])) as prefix
@@ -63,12 +70,12 @@ def checks_ms_in_mongo():
                   ,CONVERT(int, [_Fld345]) as count_chips
                   ,[_Fld242] as description
                   ,CONVERT(bigint, [_Fld20]) as number_cashbox
-                  ,CASE WHEN [_Reference73]._Description = '999-999-99-99' THEN NUll ELSE CONVERT(bigint, REPLACE([_Reference73]._Description,'-','')) END as phone
+                  ,CASE WHEN [_Reference73]._Description = '999-999-99-99' THEN 0 ELSE CONVERT(bigint, REPLACE([_Reference73]._Description,'-','')) END as phone
                   ,CONVERT(int, [_Fld22]) as number_check
                   ,CONVERT(int, [_Fld272]) as promo_code
                   ,CONVERT(int, [_Fld164]) as r_number_check
                   ,CONVERT(int, [_Fld273]) as gold_585
-                  ,CASE WHEN [_Reference73]._Description = '999-999-99-99' THEN NUll ELSE CONVERT(int, [_Fld118]) END as employee
+                  ,CASE WHEN [_Reference73]._Description = '999-999-99-99' THEN 0 ELSE CONVERT(int, [_Fld118]) END as employee
                   ,CONVERT(decimal(10,2), [_Fld140]) as sum_sale
                   ,CONVERT(decimal(10,2), [_Fld139]) as sum_check
                   ,[_Fld141] as employee_id
@@ -92,8 +99,8 @@ def checks_ms_in_mongo():
 
         return sourse.select_to_dict(query)
 
-    @task(task_id='load')
-    def load(load_list):
+    @task(task_id='load_insert_many')
+    def load_insert_many(load_list):
 
         mongodb = {}
 
@@ -105,15 +112,74 @@ def checks_ms_in_mongo():
         mongodb['login'] = mongo_login
         mongodb['password'] = mongo_pass
 
-        print(load_list)
+        try:
+            target = Mongo(params=deepcopy(mongodb))
+            target.insert_mongo(load_list)
 
-        return
+            return 'exit_dag'
+        except Exception as err:
+            print(err)
+            return 'load_update'
+
+    @task(task_id='load_update')
+    def load_update(**kwargs):
+
+        load_list = kwargs['ti'].xcom_pull(key='data_list', task_ids=['extract'])
+
+        mongodb = {}
+
+        for line in mongo_connect:
+            if line['database'] == 'checks' and line['schema'] == 'info_checks':
+                mongodb = line
+                break
+
+        mongodb['login'] = mongo_login
+        mongodb['password'] = mongo_pass
 
         try:
             target = Mongo(params=deepcopy(mongodb))
             target.update_mongo(load_list)
         except Exception as err:
             print(err)
+
+    err_loading = BranchPythonOperator(
+        task_id='err_loading',
+        python_callable=_err_loading,
+    )
+
+    exit_dag = DummyOperator(task_id='exit_dag')
+
+    data_list = extract(yesterday='{{ ds }}')
+    load_insert_many(data_list) >> err_loading >> [load_update(), exit_dag]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # data_list = extract(yesterday='{{ ds }}')
+    # load_insert_many(data_list)
+
+    # choose_best_model(accurate)
+    #
+    # choose_best_model >> accurate
+
+    # choose_best_model = BranchPythonOperator(
+    #
+    # )
 
     # @task(task_id='load')
     # def load(file_path):
@@ -143,8 +209,15 @@ def checks_ms_in_mongo():
     #     file = File(file_name)
     #     file.delete_file()
 
-    data_list = extract(yesterday='{{ ds }}')
-    load(data_list)
+    # if not load_insert_many(data_list):
+    #     load_update(data_list)
+
+    # data_list = extract(yesterday='{{ ds }}')
+    #
+    # extract(yesterday='{{ ds }}') >> load_insert_many(data_list)
+    #
+    # load_insert_many(data_list) >> Label("No errors")
+    # load_insert_many(data_list) >> Label("Errors found") >> load_update(data_list)
 
     # file_path = extract(yesterday='{{ ds }}')
     # file_deleted = load(file_path)
