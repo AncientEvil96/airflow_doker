@@ -38,7 +38,7 @@ class MsSQL:
 
     def select_to_file(self, query, file_name) -> str:
         """
-        получение данных в файле  parquet
+        получение данных в файле parquet
         :return: file path
         """
 
@@ -48,3 +48,15 @@ class MsSQL:
             return sf.create_file_parquet(
                 df=df
             )
+
+    def select_to_dict(self, query) -> list:
+        """
+        получение данных в list of dict
+        :return: list
+        """
+
+        with pyodbc.connect(self.conn_ms) as cnxn:
+            df = pd.read_sql(query, cnxn)
+
+            df.to_timestamp()
+            return df.to_dict('records')

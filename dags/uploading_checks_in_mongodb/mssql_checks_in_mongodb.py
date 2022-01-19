@@ -45,10 +45,10 @@ def checks_ms_in_mongo():
         t_end = t_begin + timedelta(days=1)
 
         query = f"""
-            SELECT top 100 substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid_db
+            SELECT TOP 100 substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid_db
                   ,CONVERT(int, [_Document16].[_Marked]) as del_mark
-                  ,DATEADD(year, -2000 ,[_Date_Time]) as created_at
-                  ,DATEADD(year, -2000 ,[_NumberPrefix]) as prefix
+                  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_Date_Time])) as created_at
+				  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_NumberPrefix])) as prefix
                   ,CONVERT(bigint, [_Number]) as number
                   ,CONVERT(int, [_Posted]) as posted
                   ,[_Fld564] as uuid
@@ -57,7 +57,7 @@ def checks_ms_in_mongo():
                   ,CONVERT(int, [_Fld21]) as shop_id
                   ,[_Reference37].[_Description] as shop_name
                   ,CONVERT(int, [_Fld18]) as refund
-                  ,DATEADD(year, -2000 ,[_Fld208]) as check_open
+                  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_Fld208])) as check_open
                   ,CONVERT(int, [_Fld119]) as im_mark
                   ,[_Fld23] as cashier_name
                   ,CONVERT(int, [_Fld345]) as count_chips
@@ -84,14 +84,16 @@ def checks_ms_in_mongo():
             WHERE [_Posted] = 1
             and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
             """
-        # return sourse.select_to_df(query)
-        return sourse.select_to_file(
-            query,
-            f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
-        )
+
+        # return sourse.select_to_file(
+        #     query,
+        #     f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+        # )
+
+        return sourse.select_to_dict(query)
 
     @task(task_id='load')
-    def load(file_path):
+    def load(load_list):
 
         mongodb = {}
 
@@ -103,24 +105,50 @@ def checks_ms_in_mongo():
         mongodb['login'] = mongo_login
         mongodb['password'] = mongo_pass
 
+        print(load_list)
+
+        return
+
         try:
-            df = pd.read_parquet(file_path)
-            load_list = df.to_dict('records')
             target = Mongo(params=deepcopy(mongodb))
             target.update_mongo(load_list)
-            return file_path
         except Exception as err:
             print(err)
-            return None
 
-    @task(task_id='delete_file')
-    def delete_file(file_name):
-        file = File(file_name)
-        file.delete_file()
+    # @task(task_id='load')
+    # def load(file_path):
+    #
+    #     mongodb = {}
+    #
+    #     for line in mongo_connect:
+    #         if line['database'] == 'checks' and line['schema'] == 'info_checks':
+    #             mongodb = line
+    #             break
+    #
+    #     mongodb['login'] = mongo_login
+    #     mongodb['password'] = mongo_pass
+    #
+    #     try:
+    #         df = pd.read_parquet(file_path)
+    #         load_list = df.to_dict('records')
+    #         target = Mongo(params=deepcopy(mongodb))
+    #         target.update_mongo(load_list)
+    #         return file_path
+    #     except Exception as err:
+    #         print(err)
+    #         return None
 
-    file_path = extract(yesterday='{{ ds }}')
-    file_deleted = load(file_path)
-    delete_file(file_deleted)
+    # @task(task_id='delete_file')
+    # def delete_file(file_name):
+    #     file = File(file_name)
+    #     file.delete_file()
+
+    data_list = extract(yesterday='{{ ds }}')
+    load(data_list)
+
+    # file_path = extract(yesterday='{{ ds }}')
+    # file_deleted = load(file_path)
+    # delete_file(file_deleted)
 
 
 tutorial_etl_dag = checks_ms_in_mongo()
