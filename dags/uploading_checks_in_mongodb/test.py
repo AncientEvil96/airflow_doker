@@ -18,7 +18,7 @@ def transform(file):
 
 def load(file):
     df = pd.read_parquet(file)
-    load_list = df.to_json(orient='records')
+    load_list = df.to_dict('records')
     mongo = Mongo(
         params={
             "host": "84.38.187.211",
@@ -29,7 +29,7 @@ def load(file):
             "password": "QXm6ditoC06BaoA6iZbS"
         }
     )
-    mongo.update_mongo(loads(load_list))
+    mongo.update_mongo(load_list)
 
 
 if __name__ == '__main__':
@@ -87,6 +87,6 @@ if __name__ == '__main__':
     }
 
     sourse = MsSQL(params=ms_connect)
-    file = sourse.select_db_df(query, f'ch_{(dd.year - 2000):03}_{dd.month:03}_{dd.day:03}')
+    file = sourse.select_to_file(query, f'tmp/checks_{(dd.year - 2000):03}_{dd.month:03}_{dd.day:03}')
     # file = transform(file)
     load(file)

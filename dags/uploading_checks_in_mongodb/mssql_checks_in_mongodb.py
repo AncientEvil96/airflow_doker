@@ -4,7 +4,9 @@ from airflow.utils.dates import datetime, timedelta
 from airflow.models import Variable
 from bases.ms import MsSQL
 from bases.mongo import Mongo
+from bases.operations_to_files import File
 from copy import deepcopy
+import pandas as pd
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
 mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
@@ -82,20 +84,43 @@ def checks_ms_in_mongo():
             WHERE [_Posted] = 1
             and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
             """
-        file = sourse.select_db_df(query, f'/opt/airflow/tmp/checks_{executor_date.strftime("%Y_%m_%d")}')
-        return file
+        # return sourse.select_to_df(query)
+        return sourse.select_to_file(
+            query,
+            f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+        )
 
     @task(task_id='load')
     def load(file_path):
-        print(file_path)
-        # mongodb = ''
-        # target = Mongo(params=deepcopy(mongodb))
-        # return target.callback_rebbit()
+
+        mongodb = {}
+
+        for line in mongo_connect:
+            if line['database'] == 'checks' and line['schema'] == 'info_checks':
+                mongodb = line
+                break
+
+        mongodb['login'] = mongo_login
+        mongodb['password'] = mongo_pass
+
+        try:
+            df = pd.read_parquet(file_path)
+            load_list = df.to_dict('records')
+            target = Mongo(params=deepcopy(mongodb))
+            target.update_mongo(load_list)
+            return file_path
+        except Exception as err:
+            print(err)
+            return None
+
+    @task(task_id='delete_file')
+    def delete_file(file_name):
+        file = File(file_name)
+        file.delete_file()
 
     file_path = extract(yesterday='{{ ds }}')
-    # print(file_path)
-    # file_path = transform(file_path)
-    load(file_path)
+    file_deleted = load(file_path)
+    delete_file(file_deleted)
 
 
 tutorial_etl_dag = checks_ms_in_mongo()

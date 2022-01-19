@@ -27,9 +27,18 @@ class MsSQL:
                        f";UID={self.__login}" \
                        f";PWD={self.__password}"
 
-    def select_db_df(self, query, file_name) -> str:
+    def select_to_df(self, query) -> pd.DataFrame:
         """
         получение данных в формате DataFrame
+        :return: DataFrame
+        """
+
+        with pyodbc.connect(self.conn_ms) as cnxn:
+            return pd.read_sql(query, cnxn)
+
+    def select_to_file(self, query, file_name) -> str:
+        """
+        получение данных в файле  parquet
         :return: file path
         """
 

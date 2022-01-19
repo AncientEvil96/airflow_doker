@@ -61,7 +61,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./airflow.cfg:/opt/airflow/airflow.cfg
-    # - ./tmp:/opt/airflow/tmp
+    - ./tmp:/opt/airflow/tmp
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     redis:
