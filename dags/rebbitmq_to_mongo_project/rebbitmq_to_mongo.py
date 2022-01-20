@@ -39,16 +39,22 @@ def rebbit_to_mongo_etl():
             sourse = Rebbit(params=deepcopy(rebbitmq))
             target = Mongo(params=deepcopy(mongodb))
 
-            @task(task_id=f"extract_{rebbitmq['host']}_{rebbitmq['queue']}_{i}")
-            def extract(sourse):
-                return sourse.callback_rebbit()
+            @task(task_id=f"extract_{rebbitmq['host']}_{rebbitmq['queue']}_{mongodb['host']}_{mongodb['database']}")
+            def extract_load(sourse, target):
+                sourse.callback_rebbit(target)
 
-            @task(task_id=f"load_{mongodb['host']}_{mongodb['database']}_{i}")
-            def load(target, list_message: list):
-                target.update_mongo(list_message)
+            extract_load(sourse, target)
 
-            list_message = extract(sourse)
-            load(target, list_message)
+            # @task(task_id=f"extract_{rebbitmq['host']}_{rebbitmq['queue']}_{i}")
+            # def extract(sourse):
+            #     return sourse.callback_rebbit()
+            #
+            # @task(task_id=f"load_{mongodb['host']}_{mongodb['database']}_{i}")
+            # def load(target, list_message: list):
+            #     target.update_mongo(list_message)
+
+            # list_message = extract(sourse)
+            # load(target, list_message)
 
             i += 1
 

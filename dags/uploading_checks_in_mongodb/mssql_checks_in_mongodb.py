@@ -15,6 +15,25 @@ mongo_pass = Variable.get('secret_mongo_pass')
 mongo_login = Variable.get('mongo_login')
 
 
+# для тестов
+# полная агрегация
+# db.checks.aggregate([{$group:{_id: {},totalAmount: { $sum: "$sum_check" },count: { $sum: 1 }}}])
+
+# на день
+# db.checks.aggregate(
+#    [
+#      {
+#        $group:
+#          {
+#            _id: {$dateTrunc: {date: "$created_at", unit: "day"}},
+#            totalAmount: { $sum: "$sum_check" },
+#            count: { $sum: 1 }
+#          }
+#      }
+#    ]
+# )
+
+
 def _delete_file(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
     file = File(load_list)
@@ -78,8 +97,8 @@ def _extract(yesterday):
     query = f"""
             SELECT substring(sys.fn_sqlvarbasetostr([_Document16].[_IDRRef]),3,32) as uuid_db
                   ,CONVERT(int, [_Document16].[_Marked]) as del_mark
-                  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_Date_Time])) as created_at
-				  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_NumberPrefix])) as prefix
+                  ,DATEADD(year, -2000 ,[_Date_Time]) as created_at
+				  ,DATEADD(year, -2000 ,[_NumberPrefix]) as prefix
                   ,CONVERT(bigint, [_Number]) as number
                   ,CONVERT(int, [_Posted]) as posted
                   ,[_Fld564] as uuid
@@ -88,7 +107,7 @@ def _extract(yesterday):
                   ,CONVERT(int, [_Fld21]) as shop_id
                   ,[_Reference37].[_Description] as shop_name
                   ,CONVERT(int, [_Fld18]) as refund
-                  ,DATEDIFF(s , '1970-01-01 00:00:00', DATEADD(year, -2000 ,[_Fld208])) as check_open
+                  ,DATEADD(year, -2000 ,[_Fld208]) as check_open
                   ,CONVERT(int, [_Fld119]) as im_mark
                   ,[_Fld23] as cashier_name
                   ,CONVERT(int, [_Fld345]) as count_chips
