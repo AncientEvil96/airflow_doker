@@ -56,3 +56,25 @@ class Mongo:
             base = client[self.mongo_schema]
             collection = base[self.mongo_database]
             collection.insert_many(load_list)
+
+    def update_mongo_rabbit(self, load_list):
+
+        """
+        modernization update for update many
+        :param
+        load_list: list type
+        """
+
+        ask = []
+
+        with MongoClient(self.__url) as client:
+            base = client[self.mongo_schema]
+            collection = base[self.mongo_database]
+            for load_doc, i in load_list:
+                try:
+                    collection.update_one({'uuid': {'$eq': load_doc['uuid']}}, {'$set': load_doc}, upsert=True)
+                    ask.append(i)
+                except Exception as err:
+                    print(err, load_doc)
+
+            return ask
