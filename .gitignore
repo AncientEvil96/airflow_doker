@@ -7,3 +7,4 @@ ENV/
 .idea/
 logs/
 *.parquet.gzip
+variables
