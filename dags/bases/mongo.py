@@ -6,14 +6,16 @@ class Mongo:
     def __init__(self, **kwargs):
         """
 
+        For your comfortable work with wongodb.
+
         mongodb:
         :param kwargs:
-        host:
+        host: server DNS or IP
         password:
         login:
         port:
-        schema:
-        database:
+        schema: connections base
+        database: connections collection
 
         """
 
@@ -28,6 +30,12 @@ class Mongo:
 
     def update_mongo(self, load_list: list):
 
+        """
+        modernization update for update many
+        :param
+        load_list: list type
+        """
+
         with MongoClient(self.__url) as client:
             base = client[self.mongo_schema]
             collection = base[self.mongo_database]
@@ -38,6 +46,12 @@ class Mongo:
                     print(err, load_doc)
 
     def insert_mongo(self, load_list: list):
+
+        """
+        insetr many for list
+        load_list: list type
+        """
+
         with MongoClient(self.__url) as client:
             base = client[self.mongo_schema]
             collection = base[self.mongo_database]
