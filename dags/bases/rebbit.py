@@ -46,7 +46,6 @@ class Rebbit:
         for ack in basic_ack:
             rmq_channel.basic_ack(ack)
 
-
     def callback_rebbit(self, target):
         """
 
