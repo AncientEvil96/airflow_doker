@@ -134,7 +134,7 @@ def _extract(yesterday):
     tags=['ms', 'mongo', 'checks'],
     schedule_interval='@daily',
     start_date=datetime(2020, 1, 1),
-    catchup=False
+    catchup=True
 )
 def checks_ms_in_mongo():
     extract = PythonOperator(
