@@ -79,17 +79,8 @@ def _load_update(**kwargs):
     target.update_mongo(load_list)
 
 
-def _extract(yesterday):
+def _extract_headers(yesterday, sourse):
     executor_date = datetime.strptime(yesterday, '%Y-%m-%d')
-
-    sourse = MsSQL(
-        params={
-            'host': ms_connect.host,
-            'password': ms_connect.password,
-            'login': ms_connect.login,
-            'database': ms_connect.schema,
-        }
-    )
 
     t_begin = datetime(executor_date.year + 2000, executor_date.month, executor_date.day)
     t_end = t_begin + timedelta(days=1)
@@ -137,8 +128,133 @@ def _extract(yesterday):
 
     return sourse.select_to_file(
         query,
-        f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+        f'tmp/checks_headers{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
     )
+
+
+def _extract_products(yesterday, sourse):
+    executor_date = datetime.strptime(yesterday, '%Y-%m-%d')
+
+    t_begin = datetime(executor_date.year + 2000, executor_date.month, executor_date.day)
+    t_end = t_begin + timedelta(days=1)
+
+    query = f"""
+            SELECT substring(sys.fn_sqlvarbasetostr([_Document16_IDRRef]),3,32) as uuid_db
+                ,[_LineNo25] as line
+                ,CONVERT(bigint, [_Fld97]) as barcode
+                ,[_Fld99] as id_product
+                ,[_Fld100] as name
+                ,[_Fld101] as amount
+                ,CONVERT(decimal(10,2), [_Fld102]) as price
+                ,CONVERT(decimal(10,2), [_Fld103]) as summ
+                ,[_Fld104] as gift_sertificate
+                ,CONVERT(int, [_Fld287]) as promo_virt_bangle
+                ,CONVERT(int, [_Fld308]) as promo_code
+                ,CONVERT(decimal(10,2), [_Fld247]) as yield
+                ,CONVERT(decimal(10,2), [_Fld248]) as purchase_price
+                ,CONVERT(decimal(10,2), [_Fld376]) as cost_price
+                ,[_Fld644] as code_markings
+            FROM [ChekKKM].[dbo].[_Document16_VT24] as [_Document16_VT24]
+                INNER JOIN [ChekKKM].[dbo].[_Document16] as [_Document16]
+                ON [_Document16].[_IDRRef] = [_Document16_VT24].[_Document16_IDRRef]
+            WHERE [_Posted] = 1 and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
+            """
+
+    return sourse.select_to_file(
+        query,
+        f'tmp/checks_products_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+    )
+
+
+def _extract_payments(yesterday, sourse):
+    executor_date = datetime.strptime(yesterday, '%Y-%m-%d')
+
+    t_begin = datetime(executor_date.year + 2000, executor_date.month, executor_date.day)
+    t_end = t_begin + timedelta(days=1)
+
+    query = f"""
+            SELECT substring(sys.fn_sqlvarbasetostr([_Document16_IDRRef]),3,32) as uuid_db
+                ,[_LineNo89] as line
+                ,[_Fld92] as [type]
+                ,CONVERT(decimal(10,2), [_Fld93]) as summ
+                ,CONVERT(decimal(10,2), [_Fld94]) as discount
+                ,[_Fld95] as gift_sertificate
+                ,[_Fld96] as bankcard
+            FROM [ChekKKM].[dbo].[_Document16_VT88] as [_Document16_VT88]
+                INNER JOIN [ChekKKM].[dbo].[_Document16] as [_Document16]
+                ON [_Document16].[_IDRRef] = [_Document16_VT88].[_Document16_IDRRef]
+            WHERE [_Posted] = 1 and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
+            """
+
+    return sourse.select_to_file(
+        query,
+        f'tmp/checks_payments_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+    )
+
+
+def _extract_lottery_tickets(yesterday, sourse):
+    executor_date = datetime.strptime(yesterday, '%Y-%m-%d')
+
+    t_begin = datetime(executor_date.year + 2000, executor_date.month, executor_date.day)
+    t_end = t_begin + timedelta(days=1)
+
+    query = f"""
+            SELECT substring(sys.fn_sqlvarbasetostr([_Document16_IDRRef]),3,32) as uuid_db
+                  ,[_LineNo110] as line
+                  ,CONVERT(int, [_Fld111]) as number
+                  ,CONVERT(int, [_Fld116]) as employee_ticket_number
+            FROM [ChekKKM].[dbo].[_Document16_VT109] as [_Document16_VT109]
+                INNER JOIN [ChekKKM].[dbo].[_Document16] as [_Document16]
+                ON [_Document16].[_IDRRef] = [_Document16_VT109].[_Document16_IDRRef]
+            WHERE [_Posted] = 1 and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
+            """
+
+    return sourse.select_to_file(
+        query,
+        f'tmp/checks_lottery_tickets_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+    )
+
+
+def _transform(yesterday, ti):
+    executor_date = datetime.strptime(yesterday, '%Y-%m-%d')
+
+    headers = ti.xcom_pull(key='return_value', task_ids=['extract_headers'])[0]
+    products = ti.xcom_pull(key='return_value', task_ids=['extract_products'])[0]
+    payments = ti.xcom_pull(key='return_value', task_ids=['extract_payments'])[0]
+    lottery_tickets = ti.xcom_pull(key='return_value', task_ids=['extract_lottery_tickets'])[0]
+
+    headers = pd.read_parquet(headers)
+    products = pd.read_parquet(products)
+    payments = pd.read_parquet(payments)
+    lottery_tickets = pd.read_parquet(lottery_tickets)
+
+    products_att = products.columns.drop('uuid_db').tolist()
+
+    df = products.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+    df['products'] = df[products.columns.drop('uuid_db').tolist()].apply(
+        lambda x: [{x: y for x, y in i} for i in list(
+            zip(x['line'],
+                x['barcode'],
+                x['id_product'],
+                x['name'],
+                x['amount'],
+                x['price'],
+                x['summ'],
+                x['gift_sertificate'],
+                x['promo_virt_bangle'],
+                x['promo_code'],
+                x['yield'],
+                x['purchase_price'],
+                x['cost_price'],
+                x['code_markings']
+                ))],
+        axis=1
+    )
+
+    headers = headers.merge(df, left_on='uuid_db', right_on='uuid_db')
+
+    file = File(f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}')
+    return file.create_file_parquet(headers)
 
 
 @dag(
@@ -156,11 +272,21 @@ def _extract(yesterday):
     catchup=True
 )
 def checks_ms_in_mongo():
+    sourse = MsSQL(
+        params={
+            'host': ms_connect.host,
+            'password': ms_connect.password,
+            'login': ms_connect.login,
+            'database': ms_connect.schema,
+        }
+    )
+
     extract = PythonOperator(
         task_id='extract',
-        python_callable=_extract,
+        python_callable=_extract_header,
         op_kwargs={
-            'yesterday': '{{ ds }}'
+            'yesterday': '{{ ds }}',
+            'sourse': sourse
         }
     )
 

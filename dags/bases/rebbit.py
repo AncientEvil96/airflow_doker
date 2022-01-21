@@ -50,6 +50,10 @@ class Rebbit:
         rmq_parameters = pika.URLParameters(rmq_url_connection_str)
         with pika.BlockingConnection(rmq_parameters) as rmq_connection:
             rmq_channel = rmq_connection.channel()
-            basic_ask = target.update_mongo_rabbit(self._on_message(rmq_channel))
+            early_ask = self._on_message(rmq_channel)
+            basic_ask = target.update_mongo_rabbit(early_ask)
             for ask in basic_ask:
                 rmq_channel.basic_ack(ask)
+
+            if len(basic_ask) != len(early_ask):
+                exit(1)
