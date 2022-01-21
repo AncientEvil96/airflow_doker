@@ -228,10 +228,8 @@ def _transform(yesterday, ti):
     payments = pd.read_parquet(payments)
     lottery_tickets = pd.read_parquet(lottery_tickets)
 
-    products_att = products.columns.drop('uuid_db').tolist()
-
-    df = products.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
-    df['products'] = df[products.columns.drop('uuid_db').tolist()].apply(
+    products = products.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+    products['products'] = products[products.columns.drop('uuid_db').tolist()].apply(
         lambda x: [{x: y for x, y in i} for i in list(
             zip(x['line'],
                 x['barcode'],
@@ -251,7 +249,33 @@ def _transform(yesterday, ti):
         axis=1
     )
 
-    headers = headers.merge(df, left_on='uuid_db', right_on='uuid_db')
+    payments = payments.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+    payments['payments'] = payments[payments.columns.drop('uuid_db').tolist()].apply(
+        lambda x: [{x: y for x, y in i} for i in list(
+            zip(x['line'],
+                x['type'],
+                x['summ'],
+                x['discount'],
+                x['gift_sertificate'],
+                x['bankcard']
+                ))],
+        axis=1
+    )
+
+    lottery_tickets = lottery_tickets.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+    lottery_tickets['payments'] = lottery_tickets[lottery_tickets.columns.drop('uuid_db').tolist()].apply(
+        lambda x: [{x: y for x, y in i} for i in list(
+            zip(x['line'],
+                x['number'],
+                x['employee_ticket_number']
+                ))],
+        axis=1
+    )
+
+
+    headers = headers.merge(products, left_on='uuid_db', right_on='uuid_db')
+    headers = headers.merge(payments, left_on='uuid_db', right_on='uuid_db')
+    headers = headers.merge(lottery_tickets, left_on='uuid_db', right_on='uuid_db')
 
     file = File(f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}')
     return file.create_file_parquet(headers)

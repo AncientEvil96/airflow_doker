@@ -56,13 +56,23 @@ df2 = pd.DataFrame(data2)
 #
 # def ss(x):
 #
+
+print(df1)
+
+print(df2)
+
+
 df = df2.groupby(['id']).agg(lambda x: [(x.name, i) for i in list(x)])
+print(df.to_dict('records'))
+print(df)
 df = df1.merge(df, left_on='id', right_on='id')
+print(df)
 df['new'] = df[df2.columns.drop('id').tolist()].apply(
     lambda x: [{x: y for x, y in i} for i in list(zip(x['name'], x['price']))],
     axis=1)
 # print(zip(df2.columns.drop('id').tolist(), df['']))
 # zip(x['name'], x['price'])
+print(df.to_dict('records'))
 print(df)
 
 # df = df1.join(df, lsuffix="_last", rsuffix='_other', how='left')
