@@ -33,6 +33,15 @@ mongo_login = Variable.get('mongo_login')
 #    ]
 # )
 
+def _convert_colum(x):
+    answer = []
+    for couter, i in enumerate(x):
+        if couter == 0:
+            answer = i
+            continue
+        answer = list(zip(answer, i))
+    return answer
+
 
 def _delete_file(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
@@ -128,7 +137,7 @@ def _extract_headers(yesterday, sourse):
 
     return sourse.select_to_file(
         query,
-        f'tmp/checks_headers{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
+        f'tmp/checks_headers_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}'
     )
 
 
@@ -223,59 +232,91 @@ def _transform(yesterday, ti):
     payments = ti.xcom_pull(key='return_value', task_ids=['extract_payments'])[0]
     lottery_tickets = ti.xcom_pull(key='return_value', task_ids=['extract_lottery_tickets'])[0]
 
-    if headers:
+    if not headers:
         headers = pd.read_parquet(headers)
+    else:
+        print('not headers.')
         exit(1)
-    if products:
-        products = pd.read_parquet(products)
-        products = products.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
-        products['products'] = products[products.columns.drop('uuid_db').tolist()].apply(
-            lambda x: [{x: y for x, y in i} for i in list(
-                zip(x['line'],
-                    x['barcode'],
-                    x['id_product'],
-                    x['name'],
-                    x['amount'],
-                    x['price'],
-                    x['summ'],
-                    x['gift_sertificate'],
-                    x['promo_virt_bangle'],
-                    x['promo_code'],
-                    x['yield'],
-                    x['purchase_price'],
-                    x['cost_price'],
-                    x['code_markings']
-                    ))],
-            axis=1
-        )
+
+    if not products:
+        df = pd.read_parquet(products)
+
+        print(df)
+
+        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+
+        print(df)
+
+        columns_name = df.columns.drop('uuid_db').tolist()
+        df['products'] = df[columns_name].apply(
+            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+            axis=1)
+
+        print(df)
+
+        # products['products'] = products[products.columns.drop('uuid_db').tolist()].apply(
+        #     lambda x: [{x: y for x, y in i} for i in list(
+        #         zip(x['line'],
+        #             x['barcode'],
+        #             x['id_product'],
+        #             x['name'],
+        #             x['amount'],
+        #             x['price'],
+        #             x['summ'],
+        #             x['gift_sertificate'],
+        #             x['promo_virt_bangle'],
+        #             x['promo_code'],
+        #             x['yield'],
+        #             x['purchase_price'],
+        #             x['cost_price'],
+        #             x['code_markings']
+        #             ))],
+        #     axis=1
+        # )
         headers = headers.merge(products, left_on='uuid_db', right_on='uuid_db')
-    if payments:
-        payments = pd.read_parquet(payments)
-        payments = payments.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
-        payments['payments'] = payments[payments.columns.drop('uuid_db').tolist()].apply(
-            lambda x: [{x: y for x, y in i} for i in list(
-                zip(x['line'],
-                    x['type'],
-                    x['summ'],
-                    x['discount'],
-                    x['gift_sertificate'],
-                    x['bankcard']
-                    ))],
-            axis=1
-        )
+    if not payments:
+        df = pd.read_parquet(payments)
+        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+
+        columns_name = df.columns.drop('uuid_db').tolist()
+        df['products'] = df[columns_name].apply(
+            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+            axis=1)
+
+        print(df)
+
+        # payments['payments'] = payments[payments.columns.drop('uuid_db').tolist()].apply(
+        #     lambda x: [{x: y for x, y in i} for i in list(
+        #         zip(x['line'],
+        #             x['type'],
+        #             x['summ'],
+        #             x['discount'],
+        #             x['gift_sertificate'],
+        #             x['bankcard']
+        #             ))],
+        #     axis=1
+        # )
         headers = headers.merge(payments, left_on='uuid_db', right_on='uuid_db')
 
-    if lottery_tickets:
-        lottery_tickets = pd.read_parquet(lottery_tickets)
-        lottery_tickets = lottery_tickets.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
-        lottery_tickets['payments'] = lottery_tickets[lottery_tickets.columns.drop('uuid_db').tolist()].apply(
-            lambda x: [{x: y for x, y in i} for i in list(
-                zip(x['line'],
-                    x['number'],
-                    x['employee_ticket_number']
-                    ))],
-            axis=1
-        )
+    if not lottery_tickets:
+        df = pd.read_parquet(lottery_tickets)
+        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+
+        columns_name = df.columns.drop('uuid_db').tolist()
+        df['products'] = df[columns_name].apply(
+            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+            axis=1)
+
+        print(df)
+
+        # lottery_tickets['payments'] = lottery_tickets[lottery_tickets.columns.drop('uuid_db').tolist()].apply(
+        #     lambda x: [{x: y for x, y in i} for i in list(
+        #         zip(x['line'],
+        #             x['number'],
+        #             x['employee_ticket_number']
+        #             ))],
+        #     axis=1
+        # )
         headers = headers.merge(lottery_tickets, left_on='uuid_db', right_on='uuid_db')
 
     file = File(f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}')
