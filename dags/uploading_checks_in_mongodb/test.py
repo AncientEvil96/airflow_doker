@@ -1,7 +1,7 @@
 from datetime import datetime
 from dags.bases.operations_to_files import File
 import pandas as pd
-from json import loads
+import numpy as np
 
 
 # ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
@@ -13,7 +13,11 @@ def _load_insert_many():
     load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
+    # df['products'] = list(df['products'])
+    # df['payments'] = list(df['payments'])
+    # df['lottery_tickets'] = list(df['lottery_tickets'])
     load_list = df.to_dict('records')
+    print(load_list)
 
     # for i in load_list:
     #     print(i)

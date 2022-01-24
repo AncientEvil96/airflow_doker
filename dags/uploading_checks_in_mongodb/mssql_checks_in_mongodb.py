@@ -49,9 +49,11 @@ def _load_insert_many(**kwargs):
     load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
+    df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(
+        lambda x: [list(i) for i in x])
     load_list = df.to_dict('records')
 
-    exit(0)
+    print(load_list)
 
     mongodb = {}
 
@@ -69,12 +71,10 @@ def _load_insert_many(**kwargs):
 
 def _load_update(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
-    load_list = 'tmp/checks_022_001_024.parquet.gzip'
+    # load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
     load_list = df.to_dict('records')
-
-    exit(0)
 
     mongodb = {}
     for line in mongo_connect:
@@ -292,8 +292,9 @@ def _transform(yesterday, ti):
     dag_id='checks_ms_in_mongo',
     tags=['ms', 'mongo', 'checks'],
     schedule_interval='@daily',
-    start_date=datetime(2020, 1, 1),
-    catchup=False
+    # start_date=datetime(2020, 1, 1),
+    start_date=datetime(2022, 1, 24),
+    catchup=True
 )
 def checks_ms_in_mongo():
     sourse = MsSQL(
@@ -305,49 +306,49 @@ def checks_ms_in_mongo():
         }
     )
 
-    # extract_headers = PythonOperator(
-    #     task_id='extract_headers',
-    #     python_callable=_extract_headers,
-    #     op_kwargs={
-    #         'yesterday': '{{ ds }}',
-    #         'sourse': sourse
-    #     }
-    # )
-    #
-    # extract_products = PythonOperator(
-    #     task_id='extract_products',
-    #     python_callable=_extract_products,
-    #     op_kwargs={
-    #         'yesterday': '{{ ds }}',
-    #         'sourse': sourse
-    #     }
-    # )
-    #
-    # extract_payments = PythonOperator(
-    #     task_id='extract_payments',
-    #     python_callable=_extract_payments,
-    #     op_kwargs={
-    #         'yesterday': '{{ ds }}',
-    #         'sourse': sourse
-    #     }
-    # )
-    #
-    # extract_lottery_tickets = PythonOperator(
-    #     task_id='extract_lottery_tickets',
-    #     python_callable=_extract_lottery_tickets,
-    #     op_kwargs={
-    #         'yesterday': '{{ ds }}',
-    #         'sourse': sourse
-    #     }
-    # )
-    #
-    # transform = PythonOperator(
-    #     task_id='transform',
-    #     python_callable=_transform,
-    #     op_kwargs={
-    #         'yesterday': '{{ ds }}'
-    #     }
-    # )
+    extract_headers = PythonOperator(
+        task_id='extract_headers',
+        python_callable=_extract_headers,
+        op_kwargs={
+            'yesterday': '{{ ds }}',
+            'sourse': sourse
+        }
+    )
+
+    extract_products = PythonOperator(
+        task_id='extract_products',
+        python_callable=_extract_products,
+        op_kwargs={
+            'yesterday': '{{ ds }}',
+            'sourse': sourse
+        }
+    )
+
+    extract_payments = PythonOperator(
+        task_id='extract_payments',
+        python_callable=_extract_payments,
+        op_kwargs={
+            'yesterday': '{{ ds }}',
+            'sourse': sourse
+        }
+    )
+
+    extract_lottery_tickets = PythonOperator(
+        task_id='extract_lottery_tickets',
+        python_callable=_extract_lottery_tickets,
+        op_kwargs={
+            'yesterday': '{{ ds }}',
+            'sourse': sourse
+        }
+    )
+
+    transform = PythonOperator(
+        task_id='transform',
+        python_callable=_transform,
+        op_kwargs={
+            'yesterday': '{{ ds }}'
+        }
+    )
 
     load_insert_many = PythonOperator(
         task_id='load_insert_many',
@@ -366,8 +367,8 @@ def checks_ms_in_mongo():
         trigger_rule='one_success'
     )
 
-    # [extract_headers, extract_products, extract_payments,
-    #  extract_lottery_tickets] >> transform >> \
+    [extract_headers, extract_products, extract_payments,
+     extract_lottery_tickets] >> transform >> load_insert_many
     load_insert_many >> [load_update, delete_file]
     load_update >> delete_file
 
