@@ -86,13 +86,13 @@ def test(x):
 # zip(x['name'], x['price'])
 # test(x[df2.columns.drop('id').tolist()])
 df['new'] = df[df2.columns.drop('id').tolist()].apply(
-    lambda x: [{x: y for x, y in i} for i in test(x[df2.columns.drop('id').tolist()])],
+    lambda x: x.apply(pd.Series).T.to_dict('records'),
     axis=1)
 # print(zip(df2.columns.drop('id').tolist(), df['']))
 # zip(x['name'], x['price'])
-print(df)
-for i in df[['id', 'new']].to_dict('records'):
-    print(i)
+# print(df)
+# for i in df[['id', 'new']].to_dict('records'):
+#     print(i)
 
 # df = df1.join(df, lsuffix="_last", rsuffix='_other', how='left')
 # df = df[['id', 'new']].to_dict('records')
@@ -110,13 +110,13 @@ for i in df[['id', 'new']].to_dict('records'):
 
 # df = df1.join(df2)
 # print(df)
-# file = File('test')
-# df = pd.read_parquet(file.create_file_parquet(df))
+file = File('test')
+df = pd.read_parquet(file.create_file_parquet(df))
 # print(df)
-# print(df.to_dict('records'))
+print(df.to_dict('records'))
 
 
-df = pd.read_csv('https://raw.githubusercontent.com/Damir214/pandas_problem/master/data.csv')
+# df = pd.read_csv('https://raw.githubusercontent.com/Damir214/pandas_problem/master/data.csv')
 
 # df = df.groupby(['chknum']).agg(list)
 # print(df)
