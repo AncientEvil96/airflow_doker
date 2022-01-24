@@ -9,6 +9,8 @@ from bases.operations_to_files import File
 from copy import deepcopy
 import pandas as pd
 
+# from json import loads
+
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
 mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 mongo_pass = Variable.get('secret_mongo_pass')
@@ -33,27 +35,23 @@ mongo_login = Variable.get('mongo_login')
 #    ]
 # )
 
-def _convert_colum(x):
-    answer = []
-    for couter, i in enumerate(x):
-        if couter == 0:
-            answer = i
-            continue
-        answer = list(zip(answer, i))
-    return answer
-
-
-def _delete_file(**kwargs):
-    load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
-    file = File(load_list)
-    file.delete_file()
+def _delete_file(ti):
+    load_files = ti.xcom_pull(key='return_value', task_ids=['extract_headers', 'extract_products', 'extract_payments',
+                                                            'extract_lottery_tickets', 'transform'])
+    file = File('')
+    for line in load_files:
+        file.file_name = line
+        file.delete_file()
 
 
 def _load_insert_many(**kwargs):
-    load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
+    # load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
+    load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
     load_list = df.to_dict('records')
+
+    exit(0)
 
     mongodb = {}
 
@@ -70,10 +68,13 @@ def _load_insert_many(**kwargs):
 
 
 def _load_update(**kwargs):
-    load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['extract'])[0]
+    load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
+    load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
     load_list = df.to_dict('records')
+
+    exit(0)
 
     mongodb = {}
     for line in mongo_connect:
@@ -232,92 +233,49 @@ def _transform(yesterday, ti):
     payments = ti.xcom_pull(key='return_value', task_ids=['extract_payments'])[0]
     lottery_tickets = ti.xcom_pull(key='return_value', task_ids=['extract_lottery_tickets'])[0]
 
-    if not headers:
+    if headers:
         headers = pd.read_parquet(headers)
     else:
         print('not headers.')
         exit(1)
 
-    if not products:
+    if products:
         df = pd.read_parquet(products)
-
-        print(df)
-
-        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
-
-        print(df)
-
-        columns_name = df.columns.drop('uuid_db').tolist()
+        df = df.groupby(['uuid_db']).agg(list)
+        columns_name = df.columns.tolist()
         df['products'] = df[columns_name].apply(
-            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+            lambda x: x.apply(pd.Series).T.to_dict('records'),
             axis=1)
 
-        print(df)
+        headers = headers.merge(df['products'], left_on='uuid_db', right_on='uuid_db')
+    else:
+        headers['products'] = headers['uuid_db'].apply(lambda x: [])
 
-        # products['products'] = products[products.columns.drop('uuid_db').tolist()].apply(
-        #     lambda x: [{x: y for x, y in i} for i in list(
-        #         zip(x['line'],
-        #             x['barcode'],
-        #             x['id_product'],
-        #             x['name'],
-        #             x['amount'],
-        #             x['price'],
-        #             x['summ'],
-        #             x['gift_sertificate'],
-        #             x['promo_virt_bangle'],
-        #             x['promo_code'],
-        #             x['yield'],
-        #             x['purchase_price'],
-        #             x['cost_price'],
-        #             x['code_markings']
-        #             ))],
-        #     axis=1
-        # )
-        headers = headers.merge(products, left_on='uuid_db', right_on='uuid_db')
-    if not payments:
+    if payments:
         df = pd.read_parquet(payments)
-        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+        df = df.groupby(['uuid_db']).agg(list)
 
-        columns_name = df.columns.drop('uuid_db').tolist()
-        df['products'] = df[columns_name].apply(
-            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+        columns_name = df.columns.tolist()
+        df['payments'] = df[columns_name].apply(
+            lambda x: x.apply(pd.Series).T.to_dict('records'),
             axis=1)
 
-        print(df)
+        headers = headers.merge(df['payments'], left_on='uuid_db', right_on='uuid_db')
+    else:
+        headers['payments'] = headers['uuid_db'].apply(lambda x: [])
 
-        # payments['payments'] = payments[payments.columns.drop('uuid_db').tolist()].apply(
-        #     lambda x: [{x: y for x, y in i} for i in list(
-        #         zip(x['line'],
-        #             x['type'],
-        #             x['summ'],
-        #             x['discount'],
-        #             x['gift_sertificate'],
-        #             x['bankcard']
-        #             ))],
-        #     axis=1
-        # )
-        headers = headers.merge(payments, left_on='uuid_db', right_on='uuid_db')
-
-    if not lottery_tickets:
+    if lottery_tickets:
         df = pd.read_parquet(lottery_tickets)
-        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+        df = df.groupby(['uuid_db']).agg(list)
 
-        columns_name = df.columns.drop('uuid_db').tolist()
-        df['products'] = df[columns_name].apply(
-            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+        columns_name = df.columns.tolist()
+        df['lottery_tickets'] = df[columns_name].apply(
+            lambda x: x.apply(pd.Series).T.to_dict('records'),
             axis=1)
 
-        print(df)
-
-        # lottery_tickets['payments'] = lottery_tickets[lottery_tickets.columns.drop('uuid_db').tolist()].apply(
-        #     lambda x: [{x: y for x, y in i} for i in list(
-        #         zip(x['line'],
-        #             x['number'],
-        #             x['employee_ticket_number']
-        #             ))],
-        #     axis=1
-        # )
-        headers = headers.merge(lottery_tickets, left_on='uuid_db', right_on='uuid_db')
+        headers = headers.merge(df['lottery_tickets'], left_on='uuid_db', right_on='uuid_db')
+    else:
+        headers['lottery_tickets'] = headers['uuid_db'].apply(lambda x: [])
 
     file = File(f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}')
     return file.create_file_parquet(headers)
@@ -347,49 +305,49 @@ def checks_ms_in_mongo():
         }
     )
 
-    extract_headers = PythonOperator(
-        task_id='extract_headers',
-        python_callable=_extract_headers,
-        op_kwargs={
-            'yesterday': '{{ ds }}',
-            'sourse': sourse
-        }
-    )
-
-    extract_products = PythonOperator(
-        task_id='extract_products',
-        python_callable=_extract_products,
-        op_kwargs={
-            'yesterday': '{{ ds }}',
-            'sourse': sourse
-        }
-    )
-
-    extract_payments = PythonOperator(
-        task_id='extract_payments',
-        python_callable=_extract_payments,
-        op_kwargs={
-            'yesterday': '{{ ds }}',
-            'sourse': sourse
-        }
-    )
-
-    extract_lottery_tickets = PythonOperator(
-        task_id='extract_lottery_tickets',
-        python_callable=_extract_lottery_tickets,
-        op_kwargs={
-            'yesterday': '{{ ds }}',
-            'sourse': sourse
-        }
-    )
-
-    transform = PythonOperator(
-        task_id='transform',
-        python_callable=_transform,
-        op_kwargs={
-            'yesterday': '{{ ds }}'
-        }
-    )
+    # extract_headers = PythonOperator(
+    #     task_id='extract_headers',
+    #     python_callable=_extract_headers,
+    #     op_kwargs={
+    #         'yesterday': '{{ ds }}',
+    #         'sourse': sourse
+    #     }
+    # )
+    #
+    # extract_products = PythonOperator(
+    #     task_id='extract_products',
+    #     python_callable=_extract_products,
+    #     op_kwargs={
+    #         'yesterday': '{{ ds }}',
+    #         'sourse': sourse
+    #     }
+    # )
+    #
+    # extract_payments = PythonOperator(
+    #     task_id='extract_payments',
+    #     python_callable=_extract_payments,
+    #     op_kwargs={
+    #         'yesterday': '{{ ds }}',
+    #         'sourse': sourse
+    #     }
+    # )
+    #
+    # extract_lottery_tickets = PythonOperator(
+    #     task_id='extract_lottery_tickets',
+    #     python_callable=_extract_lottery_tickets,
+    #     op_kwargs={
+    #         'yesterday': '{{ ds }}',
+    #         'sourse': sourse
+    #     }
+    # )
+    #
+    # transform = PythonOperator(
+    #     task_id='transform',
+    #     python_callable=_transform,
+    #     op_kwargs={
+    #         'yesterday': '{{ ds }}'
+    #     }
+    # )
 
     load_insert_many = PythonOperator(
         task_id='load_insert_many',
@@ -408,8 +366,9 @@ def checks_ms_in_mongo():
         trigger_rule='one_success'
     )
 
-    [extract_headers, extract_products, extract_payments,
-     extract_lottery_tickets] >> transform >> load_insert_many >> [load_update, delete_file]
+    # [extract_headers, extract_products, extract_payments,
+    #  extract_lottery_tickets] >> transform >> \
+    load_insert_many >> [load_update, delete_file]
     load_update >> delete_file
 
 

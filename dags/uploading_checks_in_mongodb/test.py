@@ -1,20 +1,24 @@
-# from airflow.models import Connection
-# from airflow.decorators import dag
-# from airflow.utils.dates import datetime, timedelta
-# from airflow.models import Variable
-# from airflow.operators.python import PythonOperator
-# from dags.bases.ms import MsSQL
-from dags.bases.mongo import Mongo
 from datetime import datetime
 from dags.bases.operations_to_files import File
-from copy import deepcopy
 import pandas as pd
+from json import loads
 
 
 # ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
 # mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 # mongo_pass = Variable.get('secret_mongo_pass')
 # mongo_login = Variable.get('mongo_login')
+
+def _load_insert_many():
+    load_list = 'tmp/checks_022_001_024.parquet.gzip'
+
+    df = pd.read_parquet(load_list)
+    load_list = df.to_dict('records')
+
+    # for i in load_list:
+    #     print(i)
+
+    # print(load_list)
 
 
 # для тестов
@@ -35,20 +39,6 @@ import pandas as pd
 #    ]
 # )
 
-def _convert_colum(x):
-    # df2 = pd.DataFrame(x)
-    # print(df2.apply(pd.Series).stack())
-    print()
-    answer = []
-    a = {}
-    for i in x:
-        if len(i) > 1:
-            exit(0)
-        a.update({'aasd': i[0]})
-        answer.append(a)
-    return answer
-
-
 def _transform(yesterday):
     executor_date = datetime.strptime(yesterday, '%Y-%m-%d')
 
@@ -65,83 +55,64 @@ def _transform(yesterday):
 
     if products:
         df = pd.read_parquet(products)
-        # df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
         df = df.groupby(['uuid_db']).agg(list)
         columns_name = df.columns.tolist()
         df['products'] = df[columns_name].apply(
             lambda x: x.apply(pd.Series).T.to_dict('records'),
             axis=1)
 
-
-        # for i in df[['products']].to_dict('records'):
-        #     print(i)
-
-        # print(df)
-
-        # df['products'] = df[columns_name].apply(
-        #     lambda x: [{x: y for x, y in i} for i in list(
-        #         zip(x['line'],
-        #             x['barcode'],
-        #             x['id_product'],
-        #             x['name'],
-        #             x['amount'],
-        #             x['price'],
-        #             x['summ'],
-        #             x['gift_sertificate'],
-        #             x['promo_virt_bangle'],
-        #             x['promo_code'],
-        #             x['yield'],
-        #             x['purchase_price'],
-        #             x['cost_price'],
-        #             x['code_markings']
-        #             ))],
-        #     axis=1
-        # )
         headers = headers.merge(df['products'], left_on='uuid_db', right_on='uuid_db')
+
+    else:
+        headers['products'] = headers['uuid_db'].apply(lambda x: [])
+
     if payments:
         df = pd.read_parquet(payments)
-        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+        df = df.groupby(['uuid_db']).agg(list)
 
         columns_name = df.columns.tolist()
-        df['products'] = df[columns_name].apply(
-            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+        df['payments'] = df[columns_name].apply(
+            lambda x: x.apply(pd.Series).T.to_dict('records'),
             axis=1)
 
-        # payments['payments'] = payments[payments.columns.drop('uuid_db').tolist()].apply(
-        #     lambda x: [{x: y for x, y in i} for i in list(
-        #         zip(x['line'],
-        #             x['type'],
-        #             x['summ'],
-        #             x['discount'],
-        #             x['gift_sertificate'],
-        #             x['bankcard']
-        #             ))],
-        #     axis=1
-        # )
-        headers = headers.merge(df, left_on='uuid_db', right_on='uuid_db')
+        headers = headers.merge(df['payments'], left_on='uuid_db', right_on='uuid_db')
+
+    else:
+        headers['payments'] = headers['uuid_db'].apply(lambda x: [])
 
     if lottery_tickets:
         df = pd.read_parquet(lottery_tickets)
-        df = df.groupby(['uuid_db']).agg(lambda x: [(x.name, i) for i in list(x)])
+        df = df.groupby(['uuid_db']).agg(list)
 
         columns_name = df.columns.tolist()
-        df['products'] = df[columns_name].apply(
-            lambda x: [{x: y for x, y in i} for i in _convert_colum(x[columns_name])],
+        df['lottery_tickets'] = df[columns_name].apply(
+            lambda x: x.apply(pd.Series).T.to_dict('records'),
             axis=1)
 
-        # lottery_tickets['payments'] = lottery_tickets[lottery_tickets.columns.drop('uuid_db').tolist()].apply(
-        #     lambda x: [{x: y for x, y in i} for i in list(
-        #         zip(x['line'],
-        #             x['number'],
-        #             x['employee_ticket_number']
-        #             ))],
-        #     axis=1
-        # )
-        headers = headers.merge(df, left_on='uuid_db', right_on='uuid_db')
+        headers = headers.merge(df['lottery_tickets'], left_on='uuid_db', right_on='uuid_db')
+
+    else:
+        headers['lottery_tickets'] = headers['uuid_db'].apply(lambda x: [])
+
+    # df = pd.read_parquet(headers)
+    # load_list = loads(df.to_json('records'))
+
+    # print(headers.dtypes)
+    # print(load_list)
+
+    # print(headers[['products', 'payments', 'lottery_tickets']])
+    # print(headers[['products', 'payments', 'lottery_tickets']])
+
+    # headers[['products', 'payments', 'lottery_tickets']] = headers[['products', 'payments', 'lottery_tickets']].where(
+    #     (pd.notnull(headers[['products', 'payments', 'lottery_tickets']])), [])
+
+    # print(headers.columns.tolist())
 
     file = File(f'tmp/checks_{(executor_date.year - 2000):03}_{executor_date.month:03}_{executor_date.day:03}')
+
     return file.create_file_parquet(headers)
 
 
 if __name__ == '__main__':
-    _transform('2022-01-21')
+    # _transform('2022-01-24')
+    _load_insert_many()
