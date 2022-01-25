@@ -8,3 +8,4 @@ ENV/
 logs/
 *.parquet.gzip
 variables
+*.tar.gz
