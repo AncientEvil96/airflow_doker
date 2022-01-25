@@ -293,8 +293,7 @@ def _transform(yesterday, ti):
     dag_id='checks_ms_in_mongo',
     tags=['ms', 'mongo', 'checks'],
     schedule_interval='@daily',
-    # start_date=datetime(2020, 1, 1),
-    start_date=datetime(2022, 1, 20),
+    start_date=datetime(2020, 1, 1),
     catchup=True
 )
 def checks_ms_in_mongo():
