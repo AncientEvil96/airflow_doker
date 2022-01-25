@@ -38,22 +38,28 @@ mongo_login = Variable.get('mongo_login')
 def _delete_file(ti):
     load_files = ti.xcom_pull(key='return_value', task_ids=['extract_headers', 'extract_products', 'extract_payments',
                                                             'extract_lottery_tickets', 'transform'])
+
+    # print(load_files)
+
     file = File('')
     for line in load_files:
+        if not line:
+            continue
         file.file_name = line
         file.delete_file()
 
 
 def _load_insert_many(**kwargs):
-    # load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
-    load_list = 'tmp/checks_022_001_024.parquet.gzip'
+    load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
+    # load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
     df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(
         lambda x: [list(i) for i in x])
+
     load_list = df.to_dict('records')
 
-    print(load_list)
+    # print(load_list)
 
     mongodb = {}
 
@@ -74,6 +80,9 @@ def _load_update(**kwargs):
     # load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
+    df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(
+        lambda x: [list(i) for i in x])
+
     load_list = df.to_dict('records')
 
     mongodb = {}
@@ -293,7 +302,7 @@ def _transform(yesterday, ti):
     tags=['ms', 'mongo', 'checks'],
     schedule_interval='@daily',
     # start_date=datetime(2020, 1, 1),
-    start_date=datetime(2022, 1, 24),
+    start_date=datetime(2022, 1, 20),
     catchup=True
 )
 def checks_ms_in_mongo():
