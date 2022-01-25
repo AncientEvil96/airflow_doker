@@ -9,8 +9,6 @@ from bases.operations_to_files import File
 from copy import deepcopy
 import pandas as pd
 
-# from json import loads
-
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
 mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 mongo_pass = Variable.get('secret_mongo_pass')
@@ -39,8 +37,6 @@ def _delete_file(ti):
     load_files = ti.xcom_pull(key='return_value', task_ids=['extract_headers', 'extract_products', 'extract_payments',
                                                             'extract_lottery_tickets', 'transform'])
 
-    # print(load_files)
-
     file = File('')
     for line in load_files:
         if not line:
@@ -51,15 +47,12 @@ def _delete_file(ti):
 
 def _load_insert_many(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
-    # load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
     df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(
         lambda x: [list(i) for i in x])
 
     load_list = df.to_dict('records')
-
-    # print(load_list)
 
     mongodb = {}
 
@@ -77,7 +70,6 @@ def _load_insert_many(**kwargs):
 
 def _load_update(**kwargs):
     load_list = kwargs['ti'].xcom_pull(key='return_value', task_ids=['transform'])[0]
-    # load_list = 'tmp/checks_022_001_024.parquet.gzip'
 
     df = pd.read_parquet(load_list)
     df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(
