@@ -53,7 +53,7 @@ x-airflow-common:
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pika pymongo fastparquet apache-airflow-providers-microsoft-mssql apache-airflow-providers-mongo apache-airflow-providers-odbc apache-airflow-providers-ssh apache-airflow-providers-mysql apache-airflow-providers-postgres apache-airflow-providers-docker apache-airflow-providers-jdbc}
   volumes:
@@ -63,7 +63,7 @@ x-airflow-common:
     - ./airflow.cfg:/opt/airflow/airflow.cfg
     - ./tmp:/opt/airflow/tmp
     - ./docker.sock:/var/run/docker.sock
-  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
     redis:
       condition: service_healthy
@@ -111,8 +111,6 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
-    # volumes:
-    # - ./tmp:/opt/airflow/tmp
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 10s
@@ -123,8 +121,6 @@ services:
   airflow-worker:
     <<: *airflow-common
     command: celery worker
-    # volumes:
-    # - ./tmp:/opt/airflow/tmp
     healthcheck:
       test:
         - "CMD-SHELL"
