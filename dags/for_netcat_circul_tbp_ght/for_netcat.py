@@ -27,16 +27,17 @@ with DAG('docker_operator_dag', default_args=default_args, schedule_interval="5 
 
     t1 = BashOperator(
         task_id='print_current_date',
-        bash_command='date'
+        bash_command='hostname && pwd && id -Gn && groups airflow && groups root'
     )
 
     t2 = DockerOperator(
         task_id='docker_command_sleep',
         image='docker_image_task',
         container_name='task___command_sleep',
-        api_version='auto',
+        api_version='1.41',
         auto_remove=True,
-        command="/bin/sleep 30",
+        # run_as_user='airflow',
+        command="echo hello",
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -45,7 +46,7 @@ with DAG('docker_operator_dag', default_args=default_args, schedule_interval="5 
         task_id='docker_command_hello',
         image='docker_image_task',
         container_name='task___command_hello',
-        api_version='auto',
+        api_version='1.41',
         auto_remove=True,
         command="/bin/sleep 40",
         docker_url="unix://var/run/docker.sock",

@@ -62,7 +62,7 @@ x-airflow-common:
     - ./plugins:/opt/airflow/plugins
     - ./airflow.cfg:/opt/airflow/airflow.cfg
     - ./tmp:/opt/airflow/tmp
-    - ./docker.sock:/var/run/docker.sock
+    - "/var/run/docker.sock:/var/run/docker.sock"
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
     redis:
