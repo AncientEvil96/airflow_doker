@@ -15,6 +15,10 @@ rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
 
 
+today = datetime.today().strftime("%Y_%m_%d")
+folder = f'/home/deus/PycharmProjects/airflow_doker/tmp/{today}'
+
+
 @dag(
     default_args={
         'owner': 'Efimov Ilya',
@@ -30,9 +34,10 @@ rebbit_pass = Variable.get("secret_rebbit_pass")
     catchup=False
 )
 def for_sites_netcat():
+
     create_folder = BashOperator(
         task_id='create_folder',
-        bash_command='mkdir -m 777 /opt/airflow/tmp/{{ ds_nodash }}'
+        bash_command=f'mkdir -m 777 /opt/airflow/tmp/{today}'
     )
 
     extract_tbp = DockerOperator(
@@ -46,12 +51,13 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/extract_tbp_{{ ds }}',
+        working_dir='/tmp/tmp',
+        command='touch extract_tbp_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -67,12 +73,12 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/transform_vprok_{{ ds }}',
+        command='touch transform_vprok_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -88,12 +94,12 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/transform_compass_{{ ds }}',
+        command='touch transform_compass_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -109,12 +115,12 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/transform_ght_{{ ds }}',
+        command='touch transform_ght_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -130,12 +136,12 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/load_subdivision_{{ ds }}',
+        command='touch load_subdivision_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -151,12 +157,12 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/load_message_176_{{ ds }}',
+        command='touch load_message_176_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -172,12 +178,12 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/load_message_173_{{ ds }}',
+        command='touch load_message_173_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -193,20 +199,20 @@ def for_sites_netcat():
         },
         mounts=[
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/tmp/{{ ds_nodash }}',
+                source=folder,
                 target='/tmp/tmp',
                 type='bind'
             )
         ],
-        command='touch /tmp/tmp/load_message_347_{{ ds }}',
+        command='touch load_message_347_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
 
     delete_folder = BashOperator(
         task_id='delete_folder',
-        bash_command='rm -r /opt/airflow/tmp/{{ ds_nodash }}',
-        trigger_rule='all_failed'
+        bash_command=f'rm -r /opt/airflow/tmp/{today}',
+        trigger_rule='none_skipped'
     )
 
     create_folder >> extract_tbp
