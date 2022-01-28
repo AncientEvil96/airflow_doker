@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.docker_operator import DockerOperator
 from airflow.operators.dummy_operator import DummyOperator
+from click import command
 from docker.types import Mount
 from airflow.models import Variable
 
@@ -13,7 +14,6 @@ mongo_login = Variable.get("mongo_login")
 rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
 rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
-
 
 today = datetime.today().strftime("%Y_%m_%d")
 folder = f'/home/deus/PycharmProjects/airflow_doker/tmp/{today}'
@@ -34,7 +34,6 @@ folder = f'/home/deus/PycharmProjects/airflow_doker/tmp/{today}'
     catchup=False
 )
 def for_sites_netcat():
-
     create_folder = BashOperator(
         task_id='create_folder',
         bash_command=f'mkdir -m 777 /opt/airflow/tmp/{today}'
@@ -54,10 +53,15 @@ def for_sites_netcat():
                 source=folder,
                 target='/tmp/tmp',
                 type='bind'
+            ),
+            Mount(
+                source='/home/deus/PycharmProjects/airflow_doker/dags/for_netcat_circul_tbp_ght',
+                target='/tmp/tmp/pr',
+                type='bind'
             )
         ],
         working_dir='/tmp/tmp',
-        command='touch extract_tbp_{{ ds }}',
+        command='bash -c "pip install pandas fastparquet pyodbc && touch 123 && python pr/test.py"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )

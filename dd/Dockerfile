@@ -22,5 +22,5 @@ WORKDIR /tmp/tmp
 RUN apt-get install -y build-essential libssl-dev libffi-dev python3.9-dev && \
     apt-get install -y unixodbc-dev
 
-# RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt
 
