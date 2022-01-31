@@ -55,15 +55,17 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pika pymongo fastparquet apache-airflow-providers-microsoft-mssql apache-airflow-providers-mongo apache-airflow-providers-odbc apache-airflow-providers-ssh apache-airflow-providers-mysql apache-airflow-providers-postgres apache-airflow-providers-docker apache-airflow-providers-jdbc}
+    # _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pika pymongo fastparquet apache-airflow-providers-microsoft-mssql apache-airflow-providers-mongo apache-airflow-providers-odbc apache-airflow-providers-ssh apache-airflow-providers-mysql apache-airflow-providers-postgres apache-airflow-providers-docker apache-airflow-providers-jdbc}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- apache-airflow-providers-docker}
   volumes:
-    - ./dags:/opt/airflow/dags
+    - ./dags:/opt/airflow/dags:rw
     - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
+    - ./plugins:/opt/airflow/plugins:rw
     - ./airflow.cfg:/opt/airflow/airflow.cfg
-    - ./tmp:/opt/airflow/tmp
-    - "/var/run/docker.sock:/var/run/docker.sock"
-  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
+    - ./tmp:/opt/airflow/tmp:rw
+    - ./project:/opt/airflow/project:rw
+    - /var/run/docker.sock:/var/run/docker.sock
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     redis:
       condition: service_healthy

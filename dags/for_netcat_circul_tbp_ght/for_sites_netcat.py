@@ -1,22 +1,25 @@
 from airflow.decorators import dag, task
-from copy import deepcopy
+# from copy import deepcopy
 from datetime import datetime, timedelta
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.docker_operator import DockerOperator
-from airflow.operators.dummy_operator import DummyOperator
-from click import command
+# from airflow.operators.dummy_operator import DummyOperator
+# from click import command
 from docker.types import Mount
-from airflow.models import Variable
 
-mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
-mongo_pass = Variable.get("secret_mongo_pass")
-mongo_login = Variable.get("mongo_login")
-rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
-rebbit_login = Variable.get("rebbit_login")
-rebbit_pass = Variable.get("secret_rebbit_pass")
+# from airflow.models import Variable
+
+# mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
+# mongo_pass = Variable.get("secret_mongo_pass")
+# mongo_login = Variable.get("mongo_login")
+# rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
+# rebbit_login = Variable.get("rebbit_login")
+# rebbit_pass = Variable.get("secret_rebbit_pass")
 
 today = datetime.today().strftime("%Y_%m_%d")
-folder = f'/home/deus/PycharmProjects/airflow_doker/tmp/{today}'
+
+main_folder = '/home/deus-pc/PycharmProjects/airflow_doker'
+folder = f'{main_folder}/tmp/{today}'
 
 
 @dag(
@@ -55,13 +58,13 @@ def for_sites_netcat():
                 type='bind'
             ),
             Mount(
-                source='/home/deus/PycharmProjects/airflow_doker/dags/for_netcat_circul_tbp_ght',
-                target='/tmp/tmp/pr',
+                source='/home/deus-pc/PycharmProjects/airflow_doker/project/for_netcat_circul_tbp_ght',
+                target='/tmp/tmp/project',
                 type='bind'
             )
         ],
         working_dir='/tmp/tmp',
-        command='bash -c "pip install pandas fastparquet pyodbc && touch 123 && python pr/test.py"',
+        command='bash -c "pip install pandas fastparquet pyodbc && touch 123 && python project/test.py"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
