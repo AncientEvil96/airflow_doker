@@ -18,8 +18,26 @@ from docker.types import Mount
 
 today = datetime.today().strftime("%Y_%m_%d")
 
-main_folder = '/home/deus-pc/PycharmProjects/airflow_doker'
+user_folder = 'deus'
+
+main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
 folder = f'{main_folder}/tmp/{today}'
+working_dir = '/tmp/tmp'
+
+mount_dir = [
+    Mount(
+        source=folder,
+        target=working_dir,
+        type='bind'
+    ),
+    Mount(
+        source=f'{main_folder}/project/for_netcat_circul_tbp_ght',
+        target=f'{working_dir}/project',
+        type='bind'
+    )
+]
+
+airflow_work_dir = f'/opt/airflow/tmp/{today}'
 
 
 @dag(
@@ -39,8 +57,11 @@ folder = f'{main_folder}/tmp/{today}'
 def for_sites_netcat():
     create_folder = BashOperator(
         task_id='create_folder',
-        bash_command=f'mkdir -m 777 /opt/airflow/tmp/{today}'
+        bash_command=f'mkdir -m 777 {airflow_work_dir}'
     )
+
+    # обновить 2 таблицы Subdivision, Sub_Class
+    # потом обновляем Message176, Message173
 
     extract_tbp = DockerOperator(
         task_id='extract_tbp',
@@ -48,23 +69,9 @@ def for_sites_netcat():
         container_name='extract_tbp_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            ),
-            Mount(
-                source='/home/deus-pc/PycharmProjects/airflow_doker/project/for_netcat_circul_tbp_ght',
-                target='/tmp/tmp/project',
-                type='bind'
-            )
-        ],
-        working_dir='/tmp/tmp',
-        command='bash -c "pip install pandas fastparquet pyodbc && touch 123 && python project/test.py"',
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command='bash -c "pip install pandas fastparquet pyodbc && touch 123 && python project/extract_tbp.py"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -75,16 +82,11 @@ def for_sites_netcat():
         container_name='transform_vprok_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch transform_vprok_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -96,16 +98,11 @@ def for_sites_netcat():
         container_name='transform_compass_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch transform_compass_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -117,16 +114,11 @@ def for_sites_netcat():
         container_name='transform_ght_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch transform_ght_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -138,16 +130,11 @@ def for_sites_netcat():
         container_name='load_subdivision_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch load_subdivision_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -159,16 +146,11 @@ def for_sites_netcat():
         container_name='load_message_176_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch load_message_176_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -180,16 +162,11 @@ def for_sites_netcat():
         container_name='load_message_173_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch load_message_173_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -201,16 +178,11 @@ def for_sites_netcat():
         container_name='load_message_347_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
-        environment={
-            'AF_EXECUTION_DATE': "{{ ds }}"
-        },
-        mounts=[
-            Mount(
-                source=folder,
-                target='/tmp/tmp',
-                type='bind'
-            )
-        ],
+        # environment={
+        #     'AF_EXECUTION_DATE': "{{ ds }}"
+        # },
+        mounts=mount_dir,
+        working_dir=working_dir,
         command='touch load_message_347_{{ ds }}',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
@@ -218,7 +190,7 @@ def for_sites_netcat():
 
     delete_folder = BashOperator(
         task_id='delete_folder',
-        bash_command=f'rm -r /opt/airflow/tmp/{today}',
+        bash_command=f'rm -r {airflow_work_dir}',
         trigger_rule='none_skipped'
     )
 
