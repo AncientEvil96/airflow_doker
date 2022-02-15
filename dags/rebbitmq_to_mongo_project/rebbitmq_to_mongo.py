@@ -1,8 +1,8 @@
 from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
-from bases.mongo import Mongo
-from bases.rebbit import Rebbit
+from base.mongo import Mongo
+from base.rebbit import Rebbit
 from copy import deepcopy
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)

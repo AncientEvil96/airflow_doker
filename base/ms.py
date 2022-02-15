@@ -36,7 +36,7 @@ class MsSQL:
         with pyodbc.connect(self.conn_ms) as cnxn:
             return pd.read_sql(query, cnxn)
 
-    def select_to_file(self, query, file_name) -> str:
+    def select_to_parquet(self, query, file_name) -> str:
         """
         получение данных в файле parquet
         :return: file path

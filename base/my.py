@@ -1,6 +1,6 @@
-import pyodbc
 import pandas as pd
 from base.operations_to_files import File
+from mysql.connector import connect, Error
 
 
 class MsSQL:
@@ -17,37 +17,44 @@ class MsSQL:
         """
         conn = kwargs.pop('params')
         self.host = conn.pop('host')
+        self.port = conn.pop('port')
         self.__password = conn.pop('password')
         self.__login = conn.pop('login')
         self.database = conn.pop('database')
-
-        self.conn_ms = "DRIVER={ODBC Driver 17 for SQL Server};" \
-                       f"SERVER={self.host}" \
-                       f";DATABASE={self.database}" \
-                       f";UID={self.__login}" \
-                       f";PWD={self.__password}"
 
     def select_to_df(self, query) -> pd.DataFrame:
         """
         получение данных в формате DataFrame
         :return: DataFrame
         """
+        try:
+            with connect(
+                    host=self.host,
+                    user=self.__login,
+                    password=self.__password,
+                    port=self.port,
+                    database=self.database
+            ) as cnxn:
+                return pd.read_sql(query, cnxn)
+        except Error as e:
+            print(e)
 
-        with pyodbc.connect(self.conn_ms) as cnxn:
-            return pd.read_sql(query, cnxn)
-
-    def select_to_file(self, query, file_name) -> str:
+    def load_csv_to_base(self, query, file_name) -> str:
         """
         получение данных в файле parquet
         :return: file path
         """
-
-        with pyodbc.connect(self.conn_ms) as cnxn:
-            sf = File(f'{file_name}')
-            df = pd.read_sql(query, cnxn)
-            return sf.create_file_parquet(
-                df=df
-            )
+        try:
+            with connect(
+                    host=self.host,
+                    user=self.__login,
+                    password=self.__password,
+                    port=self.port,
+                    database=self.database
+            ) as cnxn:
+                cnxn.
+        except Error as e:
+            print(e)
 
     def select_to_dict(self, query) -> list:
         """

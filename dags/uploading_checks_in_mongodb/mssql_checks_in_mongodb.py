@@ -3,9 +3,9 @@ from airflow.decorators import dag
 from airflow.utils.dates import datetime, timedelta
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
-from bases.ms import MsSQL
-from bases.mongo import Mongo
-from bases.operations_to_files import File
+from base.ms import MsSQL
+from base.mongo import Mongo
+from base.operations_to_files import File
 from copy import deepcopy
 import pandas as pd
 
