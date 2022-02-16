@@ -1,9 +1,8 @@
 import pandas as pd
-from base.operations_to_files import File
 from mysql.connector import connect, Error
 
 
-class MsSQL:
+class MySQL:
     def __init__(self, **kwargs):
         """
 
@@ -21,47 +20,70 @@ class MsSQL:
         self.__password = conn.pop('password')
         self.__login = conn.pop('login')
         self.database = conn.pop('database')
+        self.connect = None
 
-    def select_to_df(self, query) -> pd.DataFrame:
+    # def connection_close(self):
+    #     self.connect.close()
+
+    def init_connection(self):
+        self.connect = connect(
+            host=self.host,
+            user=self.__login,
+            password=self.__password,
+            port=self.port,
+            database=self.database)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connect.close()
+
+    def select_to_df(self, query: str) -> pd.DataFrame:
         """
         получение данных в формате DataFrame
         :return: DataFrame
         """
-        try:
-            with connect(
-                    host=self.host,
-                    user=self.__login,
-                    password=self.__password,
-                    port=self.port,
-                    database=self.database
-            ) as cnxn:
-                return pd.read_sql(query, cnxn)
-        except Error as e:
-            print(e)
+        return pd.read_sql(query, self.connect)
 
-    def load_csv_to_base(self, query, file_name) -> str:
-        """
-        получение данных в файле parquet
-        :return: file path
-        """
-        try:
-            with connect(
-                    host=self.host,
-                    user=self.__login,
-                    password=self.__password,
-                    port=self.port,
-                    database=self.database
-            ) as cnxn:
-                cnxn.
-        except Error as e:
-            print(e)
+    # def load_csv_to_base(self, query: str, file_name) -> str:
+    #     """
+    #     получение данных в файле parquet
+    #     :return: file path
+    #     """
+    #
+    #     query = """
+    #
+    #     """
+    #
+    #     try:
+    #         with connect(
+    #                 host=self.host,
+    #                 user=self.__login,
+    #                 password=self.__password,
+    #                 port=self.port,
+    #                 database=self.database
+    #         ) as cnxn:
+    #             cursor = cnxn.cursor()
+    #             cursor.execute(query)
+    #     except Error as e:
+    #         print(e)
 
-    def select_to_dict(self, query) -> list:
+    def load_many_to_base(self, query: str, load_list):
         """
-        получение данных в list of dict
-        :return: list
+        загрузка данных в файле list
         """
+        if self.connect is None:
+            print('use init_connection function')
+            return
+        cursor = self.connect.cursor()
+        cursor.executemany(query, load_list)
+        self.connect.commit()
 
-        with pyodbc.connect(self.conn_ms) as cnxn:
-            df = pd.read_sql(query, cnxn)
-            return df.to_dict('records')
+    def query_to_base(self, query: str):
+        """
+        выполнение любого запроса
+        """
+        if self.connect is None:
+            print('use init_connection function')
+            return
+
+        cursor = self.connect.cursor()
+        cursor.execute(query)

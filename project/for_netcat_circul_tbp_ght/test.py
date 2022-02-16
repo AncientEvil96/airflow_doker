@@ -1,5 +1,5 @@
-from datetime import datetime
-
-print(datetime.today().strftime('%Y_%m_%d'))
-print(datetime.strptime("2018-01-31", "%Y-%m-%d").strftime('%Y_%m_%d'))
-print(datetime.strptime("2018-01-31", "%Y-%m-%d"))
+import pandas as pd
+df = pd.DataFrame([[1, 2], [4, 5], [7, 8]],
+        index=['cobra', 'viper', 'sidewinder'],
+        columns=['max_speed', 'shield'])
+df.loc[['viper', 'sidewinder']]
