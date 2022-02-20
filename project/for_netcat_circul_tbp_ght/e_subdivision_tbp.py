@@ -121,4 +121,4 @@ if __name__ == '__main__':
     # source.select_to_parquet('select 1, 2', f'{local_dir}subdivision_compass')
 
     source.select_to_parquet(query_compass, f'{local_dir}subdivision_compass')
-    # source.select_to_parquet(query_vprok, f'{local_dir}subdivision_vprok')
+    source.select_to_parquet(query_vprok, f'{local_dir}subdivision_vprok')
