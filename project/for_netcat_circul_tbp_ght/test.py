@@ -1,5 +1,8 @@
 import pandas as pd
-df = pd.DataFrame([[1, 2], [4, 5], [7, 8]],
-        index=['cobra', 'viper', 'sidewinder'],
-        columns=['max_speed', 'shield'])
-df.loc[['viper', 'sidewinder']]
+
+df1 = pd.read_csv('subdivision_vprok.csv')
+df2 = pd.read_csv('subdivision_compass.csv')
+
+df = pd.concat([df1, df2])
+
+print(df)
