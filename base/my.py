@@ -22,10 +22,10 @@ class MySQL:
         self.database = conn.pop('database')
         self.connect = None
 
-    # def connection_close(self):
-    #     self.connect.close()
+    def connection_close(self):
+        self.connect.close()
 
-    def init_connection(self):
+    def connection_init(self):
         self.connect = connect(
             host=self.host,
             user=self.__login,
@@ -33,8 +33,8 @@ class MySQL:
             port=self.port,
             database=self.database)
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.connect.close()
+    # def __exit__(self, exc_type, exc_val, exc_tb):
+    #     self.connect.close()
 
     def select_to_df(self, query: str) -> pd.DataFrame:
         """

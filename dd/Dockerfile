@@ -10,7 +10,7 @@ RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get install -y python3.9 && \
+    apt-get install -y python3.8 && \
     apt-get install -y python3-pip &&\
     apt-get install -y curl
 
@@ -20,7 +20,7 @@ RUN apt-get update && \
     ACCEPT_EULA=Y apt-get install -y msodbcsql17
 
 RUN cd /usr/bin && \
-    ln -s python3.9 python && \
+    ln -s python3.8 python && \
     python -m pip install --upgrade pip
 
 WORKDIR /tmp/tmp
