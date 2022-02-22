@@ -13,110 +13,72 @@ if __name__ == '__main__':
         }
     )
 
-    query_compass = """
-        WITH RecursiveQuery (_IDRRef, _ParentIDRRef, TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic)
-                 AS
-                 (
-                     select _Reference505._IDRRef        AS _IDRRef
-                          , _Reference505._ParentIDRRef  AS _ParentIDRRef
-                          , CONVERT(bigint, [_Fld395])   AS TBP_ID
-                          , [_Reference505]._Description AS Subdivision_Name
-                          , CONVERT(bigint, [_Fld396])   AS parent_id
-                          , 2                            AS Catalogue_ID
-                          , [_InfoRg393].[_Fld720]       AS menu_pic
-                     from [TBP_WORK].[dbo]._Reference1145
-                              INNER JOIN (select _IDRRef, _Description
-                                          from [TBP_WORK].[dbo]._Reference1145
-                                          WHERE _Description in (N'ЦИРКУЛЬ')) as PVC
-                                         on _Reference1145._ParentIDRRef = PVC._IDRRef
-                              INNER JOIN [TBP_WORK].[dbo]._InfoRg1149
-                                         on _Fld1162 = _Fld1152
-                              INNER JOIN [TBP_WORK].[dbo]._Reference11
-                                         ON _Reference11._Code = _InfoRg1149._Fld1150
-                                             AND _Reference11._Marked = 0
-                                             AND _Reference11.[_Fld1165] IN (1, 2, 3, 4)
-                              INNER JOIN [TBP_WORK].[dbo]._InfoRg406
-                                         ON _Fld407RRef = _Reference11._IDRRef
-                              INNER JOIN [TBP_WORK].[dbo]._Reference505 as _Reference505
-                                         ON _Fld731RRef = _Reference505._IDRRef
-                              INNER JOIN [TBP_WORK].[dbo].[_InfoRg393] ON _Fld394RRef = _Reference505._IDRRef
-                     WHERE _Reference1145._Marked = 0
-                     GROUP BY _Reference505._IDRRef
-                            , _Reference505._ParentIDRRef
-                            , CONVERT(bigint, [_Fld395])
-                            , [_Reference505]._Description
-                            , CONVERT(bigint, [_Fld396])
-                            , [_InfoRg393].[_Fld720]
-                     UNION ALL
-                     select _Reference505._IDRRef        AS _IDRRef
-                          , _Reference505._ParentIDRRef  AS _ParentIDRRef
-                          , CONVERT(bigint, [_Fld395])   AS TBP_ID
-                          , [_Reference505]._Description AS Subdivision_Name
-                          , CONVERT(bigint, [_Fld396])   AS parent_id
-                          , 2                            AS Catalogue_ID
-                          , [_InfoRg393].[_Fld720]       AS menu_pic
-                     from [TBP_WORK].[dbo]._Reference505 as _Reference505
-                              INNER JOIN [TBP_WORK].[dbo].[_InfoRg393] ON _Fld394RRef = _Reference505._IDRRef
-                              INNER JOIN RecursiveQuery rec ON _Reference505._IDRRef = rec._ParentIDRRef
-                 )
-        SELECT TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic
-        FROM RecursiveQuery
-        group by TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic;
-        """
-
-    query_vprok = """
-        WITH RecursiveQuery (_IDRRef, _ParentIDRRef, TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic)
-                 AS
-                 (
-                     select _Reference505._IDRRef        AS _IDRRef
-                          , _Reference505._ParentIDRRef  AS _ParentIDRRef
-                          , CONVERT(bigint, [_Fld395])   AS TBP_ID
-                          , [_Reference505]._Description AS Subdivision_Name
-                          , CONVERT(bigint, [_Fld396])   AS parent_id
-                          , 1                            AS Catalogue_ID
-                          , [_InfoRg393].[_Fld720]       AS menu_pic
-                     from [TBP_WORK].[dbo]._Reference1145
-                              INNER JOIN (select _IDRRef, _Description
-                                          from [TBP_WORK].[dbo]._Reference1145
-                                          WHERE _Description in (N'ВПРОК')) as PVC
-                                         on _Reference1145._ParentIDRRef = PVC._IDRRef
-                              INNER JOIN [TBP_WORK].[dbo]._InfoRg1149
-                                         on _Fld1162 = _Fld1152
-                              INNER JOIN [TBP_WORK].[dbo]._Reference11
-                                         ON _Reference11._Code = _InfoRg1149._Fld1150
-                                             AND _Reference11._Marked = 0
-                                             AND _Reference11.[_Fld1165] IN (1, 2, 3, 4)
-                              INNER JOIN [TBP_WORK].[dbo]._InfoRg406
-                                         ON _Fld407RRef = _Reference11._IDRRef
-                              INNER JOIN [TBP_WORK].[dbo]._Reference505 as _Reference505
-                                         ON _Fld731RRef = _Reference505._IDRRef
-                              INNER JOIN [TBP_WORK].[dbo].[_InfoRg393] ON _Fld394RRef = _Reference505._IDRRef
-                     WHERE _Reference1145._Marked = 0
-                     GROUP BY _Reference505._IDRRef
-                            , _Reference505._ParentIDRRef
-                            , CONVERT(bigint, [_Fld395])
-                            , [_Reference505]._Description
-                            , CONVERT(bigint, [_Fld396])
-                            , [_InfoRg393].[_Fld720]
-                     UNION ALL
-                     select _Reference505._IDRRef        AS _IDRRef
-                          , _Reference505._ParentIDRRef  AS _ParentIDRRef
-                          , CONVERT(bigint, [_Fld395])   AS TBP_ID
-                          , [_Reference505]._Description AS Subdivision_Name
-                          , CONVERT(bigint, [_Fld396])   AS parent_id
-                          , 1                            AS Catalogue_ID
-                          , [_InfoRg393].[_Fld720]       AS menu_pic
-                     from [TBP_WORK].[dbo]._Reference505 as _Reference505
-                              INNER JOIN [TBP_WORK].[dbo].[_InfoRg393] ON _Fld394RRef = _Reference505._IDRRef
-                              INNER JOIN RecursiveQuery rec ON _Reference505._IDRRef = rec._ParentIDRRef
-                 )
-        SELECT TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic
-        FROM RecursiveQuery
-        group by TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic;
+    query = """
+        SELECT CONVERT(bigint, Parent._Code)                                                        as parent_id
+             , CONVERT(bigint, _Reference11.[_Code])                                                AS Article
+             --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])   as VariantName
+             , IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])   as Name
+             , _Reference11.[_Fld375]                                                               as Description
+             , Vendor._Description                                                                  as VendorTbp
+             , Breand._Description                                                                  as Vendor
+             --, 0                                                                                    as User_ID
+             --, 0                                                                                    as LastUser_ID
+             --, 1                                                                                    as Checked
+             , MAX(_Reference336._Fld340)                                                           as Weight
+             , MAX(_Reference336._Fld341)                                                           as PackageSize2
+             , MAX(_Reference336._Fld342)                                                           as PackageSize3
+             , MAX(_Reference336._Fld343)                                                           as PackageSize1
+             --, 'goods-' + CONVERT(nvarchar, _Reference11.[_Code])                                   as Keyword
+             , IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])   as ncTitle
+             --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317]) +
+             --  N' и другие товары повседневного спроса, можно приобрести в сети магазинов "ВПРОК".' as ncDescription
+             --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])   as ncSMO_Title
+             --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317]) +
+             --  N' и другие товары повседневного спроса, можно приобрести в сети магазинов "ВПРОК".' as ncSMO_Description
+             , MAX(_Image._Fld1084)                                                                 as Image
+             , Price._Fld482                                                                        as Price
+             , Price._Fld312                                                                        as PriceMinimum
+             , CONVERT(integer, _Reference11.[_Fld1165])                                            as Status
+             , CONVERT(integer, IIF(_Reference11.[_Fld1165] = 1, 1, 0))                             as StockUnits
+             --, 1                                                                                    as Currency
+             --, 1                                                                                    as CurrencyMinimum
+        FROM [TBP_WORK].[dbo].[_Reference11] as _Reference11
+                 INNER JOIN [TBP_WORK].[dbo].[_InfoRg308] as Price
+                            ON Price._Fld309RRef = _Reference11._IDRRef
+                 LEFT JOIN [TBP_WORK].[dbo].[_Reference11] AS Parent
+                           ON Parent._IDRRef = _Reference11.[_ParentIDRRef]
+                 LEFT JOIN [TBP_WORK].[dbo].[_Reference336] as _Reference336
+                           ON _Reference336._OwnerIDRRef = _Reference11._IDRRef
+                 LEFT JOIN [TBP_WORK].[dbo].[_InfoRg1083] as _Image
+                           ON _Image._Fld1085 = _Reference11._Code
+                               AND _Image._Fld1086 = 1
+                 LEFT JOIN [TBP_WORK].[dbo]._Reference296 as Vendor
+                           ON _Reference11._Fld92RRef = Vendor._IDRRef
+                 LEFT JOIN [TBP_WORK].[dbo]._Reference295 as Breand
+                           ON _Reference11._Fld91RRef = Breand._IDRRef
+        WHERE _Reference11.[_Fld1165] IN (1, 2, 3, 4)
+        GROUP BY CONVERT(bigint, Parent._Code)
+               , CONVERT(bigint, _Reference11.[_Code])
+               --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])
+               , IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])
+               , _Reference11.[_Fld375]
+               , Vendor._Description
+               , Breand._Description
+               --, 'goods-' + CONVERT(nvarchar, _Reference11.[_Code])
+               , IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])
+               --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317]) +
+               --  N' и другие товары повседневного спроса, можно приобрести в сети магазинов "ВПРОК".'
+               --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317])
+               --, IIF(_Reference11.[_Fld1317] = '', _Reference11.[_Fld359], _Reference11.[_Fld1317]) +
+               --  N' и другие товары повседневного спроса, можно приобрести в сети магазинов "ВПРОК".'
+               , Price._Fld482
+               , Price._Fld312
+               , CONVERT(integer, _Reference11.[_Fld1165])               
+               , CONVERT(integer, IIF(_Reference11.[_Fld1165] = 1, 1, 0))
+        ;
         """
 
     local_dir = '/tmp/tmp/'
-    # local_dir = ''
+    local_dir = ''
 
-    source.select_to_parquet(query_compass, f'{local_dir}subdivision_compass')
-    source.select_to_parquet(query_vprok, f'{local_dir}subdivision_vprok')
+    source.select_to_parquet(query, f'product')

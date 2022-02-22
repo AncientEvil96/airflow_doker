@@ -1,4 +1,3 @@
-from transliterate import translit
 from base.my import MySQL
 from sys import argv
 
@@ -73,57 +72,18 @@ def translit_text(text):
         'Э': 'E',
         'Ю': 'U',
         'Я': 'YA',
-        ',': ',',
-        '?': '?',
-        ' ': '-',
-        '~': '~',
-        '!': '!',
-        '@': '@',
-        '#': '#',
-        '$': '$',
-        '%': '%',
-        '^': '^',
-        '&': '&',
-        '*': '*',
-        '(': '(',
-        ')': ')',
-        '-': '-',
-        '=': '=',
-        '+': '+',
-        ':': ':',
-        ';': ';',
-        '<': '<',
-        '>': '>',
-        '\'': '\'',
-        '"': '"',
-        '\\': '\\',
-        '/': '/',
         '№': '#',
-        '[': '[',
-        ']': ']',
-        '{': '{',
-        '}': '}',
         'ґ': 'r',
         'ї': 'r',
         'є': 'e',
         'Ґ': 'g',
         'Ї': 'i',
         'Є': 'e',
-        '—': '-',
-        '0': '0',
-        '1': '1',
-        '2': '2',
-        '3': '3',
-        '4': '4',
-        '5': '5',
-        '6': '6',
-        '7': '7',
-        '8': '8',
-        '9': '9'
+        '—': '-'
     }
     s = ''
     for i in text:
-        s = s + dictionary.get(i)
+        s = s + dictionary.get(i, i)
 
     return s
 
@@ -146,8 +106,7 @@ if __name__ == '__main__':
             SELECT Subdivision.Subdivision_ID                             as Subdivision_ID,
                    Subdivision.Catalogue_ID                               as Catalogue_ID,
                    IF(have_children.Subdivision_ID is not null, 175, 176) as Class_ID,
-                   Subdivision.Subdivision_Name                           as Sub_Class_Name,
-                   1                                                      as Checked
+                   Subdivision.Subdivision_Name                           as Sub_Class_Name
             FROM Subdivision
                      LEFT JOIN Sub_Class
                                ON Sub_Class.Subdivision_ID = Subdivision.Subdivision_ID
@@ -165,8 +124,60 @@ if __name__ == '__main__':
         """
     )
 
-    df['CustomSettings'] = ''
+    # df[['Checked', 'CustomSettings']] = (1, '')
     df['EnglishName'] = list(map(translit_text, df['Sub_Class_Name']))
+
+    # print(df.dtypes)
+    #
+    # for i in list(df.itertuples(index=False, name=None)):
+    #     print(i)
+
+    table = 'tmp_sub_class'
+
+    target.query_to_base(f'drop table if exists {table};')
+    target.query_to_base(
+        f"""
+            create temporary table {table}
+            (
+                Subdivision_ID int                 not null,
+                Catalogue_ID   int                 not null,
+                Class_ID       int                 not null,
+                Sub_Class_Name varchar(255)        not null,
+                Checked        smallint default 1  not null,
+                CustomSettings text     default '' not null,
+                EnglishName    varchar(64)         not null
+            );
+        """
+    )
+
+    query = f"""
+                INSERT INTO {table}
+                    (
+                        Subdivision_ID,
+                        Catalogue_ID,
+                        Class_ID,
+                        Sub_Class_Name,
+                        EnglishName
+                     )
+                VALUES (%s, %s, %s, %s, %s);
+            """
+
+    target.load_many_to_base(query, list(df.itertuples(index=False, name=None)))
+
+    target.query_to_base(
+        f"""
+            INSERT INTO Sub_Class
+                (Subdivision_ID,
+                 Catalogue_ID,
+                 Class_ID,
+                 Sub_Class_Name,
+                 Checked,
+                 CustomSettings,
+                 EnglishName)
+                 select * from {table};
+        """
+    )
+
     target.connection_close()
 
-    print(df)
+    # print(df.dtypes)

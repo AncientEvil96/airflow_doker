@@ -72,7 +72,7 @@ if __name__ == '__main__':
     target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
         f"""
-        create table {table}
+        create temporary table {table}
             (
                 TBP_ID           int                                              not null,
                 Subdivision_Name varchar(255) default ''                          not null,
