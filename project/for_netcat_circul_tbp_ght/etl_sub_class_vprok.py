@@ -1,7 +1,7 @@
 from base.my import MySQL
 from sys import argv
 
-host, port, password, login, database, file = argv[1:]
+host, port, password, login, database = argv[1:]
 
 
 def translit_text(text):
@@ -124,13 +124,7 @@ if __name__ == '__main__':
         """
     )
 
-    # df[['Checked', 'CustomSettings']] = (1, '')
     df['EnglishName'] = list(map(translit_text, df['Sub_Class_Name']))
-
-    # print(df.dtypes)
-    #
-    # for i in list(df.itertuples(index=False, name=None)):
-    #     print(i)
 
     table = 'tmp_sub_class'
 
@@ -179,5 +173,3 @@ if __name__ == '__main__':
     )
 
     target.connection_close()
-
-    # print(df.dtypes)

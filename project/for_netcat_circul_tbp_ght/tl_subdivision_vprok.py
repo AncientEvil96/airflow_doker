@@ -2,15 +2,16 @@ from base.my import MySQL
 from sys import argv
 import pandas as pd
 
-host, port, password, login, database, file = argv[1:]
+host, port, password, login, database, compass, vprok = argv[1:]
 
 
 def get_load_list():
-    # df = pd.read_parquet(file)
-    df1 = pd.read_parquet('subdivision_vprok.parquet.gzip')
+    df1 = pd.read_parquet(vprok)
+    # df1 = pd.read_parquet('subdivision_vprok.parquet.gzip')
     df1.loc[df1['parent_id'] == 0, 'Parent_Sub_ID'] = 421
     # df1.loc[df1['Catalogue_ID'] == 1, 'Template_ID'] = 2
-    df2 = pd.read_parquet('subdivision_compass.parquet.gzip')
+    df2 = pd.read_parquet(compass)
+    # df2 = pd.read_parquet('subdivision_compass.parquet.gzip')
     df2.loc[df2['parent_id'] == 0, 'Parent_Sub_ID'] = 52
     # df2.loc[df2['Catalogue_ID'] == 2, 'Template_ID'] = 5
     df = pd.concat([df1, df2])
@@ -66,7 +67,7 @@ if __name__ == '__main__':
         }
     )
 
-    table = 'subdivision_netcat'
+    table = 'tmp_subdivision_netcat'
 
     target.connection_init()
     target.query_to_base(f'drop table if exists {table};')
@@ -86,7 +87,8 @@ if __name__ == '__main__':
                 menu_pic         char(255)                                        null,
                 Title            varchar(255) default IF(Catalogue_ID = 1, concat(Subdivision_Name, ' | сеть магазинов "ВПРОК"'),
                                              concat(Subdivision_Name, ' | в сети "Циркуль"')) null,
-                Template_ID int               default IF(Catalogue_ID = 1,2,5)    null
+                Template_ID int               default IF(Catalogue_ID = 1,2,5)    null,
+                KEY {table}_TBP_ID_Catalogue_ID_ui (TBP_ID, Catalogue_ID)
         );
         """
     )

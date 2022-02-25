@@ -25,6 +25,7 @@ main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
 folder = f'{main_folder}/tmp/for_sites_netcat_{today}'
 working_dir = '/tmp/tmp'
 airflow_work_dir = f'/opt/airflow/tmp/for_sites_netcat_{today}'
+image = 'airflow_task_python_3.8'
 
 mount_dir = [
     Mount(
@@ -65,13 +66,10 @@ def for_sites_netcat():
         bash_command=f'mkdir -m 777 {airflow_work_dir}'
     )
 
-    # обновить 2 таблицы Subdivision, Sub_Class
-    # потом обновляем Message176, Message173
-
     e_subdivision_tbp = DockerOperator(
         task_id='e_subdivision_tbp',
-        image='airflow_task_python_3.9',
-        container_name='e_subdivision_tbp{{ task_instance.job_id }}',
+        image=image,
+        container_name='e_subdivision_tbp_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
         mounts=mount_dir,
@@ -81,143 +79,70 @@ def for_sites_netcat():
         network_mode="bridge"
     )
 
-    l_subdivision_vprok = DockerOperator(
-        task_id='l_subdivision_vprok',
-        image='airflow_task_python_3.9',
-        container_name='l_subdivision_vprok{{ task_instance.job_id }}',
+    tl_subdivision_vprok = DockerOperator(
+        task_id='tl_subdivision_vprok',
+        image=image,
+        container_name='tl_subdivision_vprok_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/l_subdivision_vprok.py {my_connect.host} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        command=f'bash -c "python project/tl_subdivision_vprok.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
 
-    t_subdivision_vprok = DockerOperator(
-        task_id='t_subdivision_vprok',
-        image='airflow_task_python_3.9',
-        container_name='extract_tbp_{{ task_instance.job_id }}',
+    etl_sub_class_vprok = DockerOperator(
+        task_id='etl_sub_class_vprok',
+        image=image,
+        container_name='etl_sub_class_vprok_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/extract_tbp.py {ms_connect.host} {ms_connect.password} {ms_connect.login} {ms_connect.schema}"',
+        command=f'bash -c "python project/etl_sub_class_vprok.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
 
-    # transform_vprok = DockerOperator(
-    #     task_id='transform_vprok',
-    #     image='airflow_task_python_3.9',
-    #     container_name='transform_vprok_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch transform_vprok_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
-    #
-    # transform_compass = DockerOperator(
-    #     task_id='transform_compass',
-    #     image='airflow_task_python_3.9',
-    #     container_name='transform_compass_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch transform_compass_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
-    #
-    # transform_ght = DockerOperator(
-    #     task_id='transform_ght',
-    #     image='airflow_task_python_3.9',
-    #     container_name='transform_ght_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch transform_ght_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
-    #
-    # load_subdivision = DockerOperator(
-    #     task_id='load_subdivision',
-    #     image='airflow_task_python_3.9',
-    #     container_name='load_subdivision_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch load_subdivision_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
-    #
-    # load_message_176 = DockerOperator(
-    #     task_id='load_message_176',
-    #     image='airflow_task_python_3.9',
-    #     container_name='load_message_176_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch load_message_176_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
-    #
-    # load_message_173 = DockerOperator(
-    #     task_id='load_message_173',
-    #     image='airflow_task_python_3.9',
-    #     container_name='load_message_173_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch load_message_173_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
-    #
-    # load_message_347 = DockerOperator(
-    #     task_id='load_message_347',
-    #     image='airflow_task_python_3.9',
-    #     container_name='load_message_347_{{ task_instance.job_id }}',
-    #     api_version='1.41',
-    #     auto_remove=True,
-    #     # environment={
-    #     #     'AF_EXECUTION_DATE': "{{ ds }}"
-    #     # },
-    #     mounts=mount_dir,
-    #     working_dir=working_dir,
-    #     command='touch load_message_347_{{ ds }}',
-    #     docker_url="unix://var/run/docker.sock",
-    #     network_mode="bridge"
-    # )
+    e_product_tbp = DockerOperator(
+        task_id='e_product_tbp',
+        image=image,
+        container_name='e_product_tbp_{{ task_instance.job_id }}',
+        api_version='1.41',
+        auto_remove=True,
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command=f'bash -c "python project/e_product_tbp.py {my_connect.host} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge"
+    )
+
+    tl_product_vprok_173 = DockerOperator(
+        task_id='tl_product_vprok_173',
+        image=image,
+        container_name='tl_product_vprok_173_{{ task_instance.job_id }}',
+        api_version='1.41',
+        auto_remove=True,
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command=f'bash -c "python project/tl_product_vprok_173.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge"
+    )
+
+    tl_product_vprok_176 = DockerOperator(
+        task_id='tl_product_vprok_176',
+        image=image,
+        container_name='tl_product_vprok_176_{{ task_instance.job_id }}',
+        api_version='1.41',
+        auto_remove=True,
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command=f'bash -c "python project/tl_product_vprok_176.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge"
+    )
 
     delete_folder = BashOperator(
         task_id='delete_folder',
@@ -225,9 +150,8 @@ def for_sites_netcat():
         trigger_rule='none_skipped'
     )
 
-    create_folder >> extract_subdivision_tbp
-    # extract_tbp >> [transform_vprok, transform_compass, transform_ght] >> load_subdivision
-    # load_subdivision >> [load_message_176, load_message_173, load_message_347] >> delete_folder
+    create_folder >> e_subdivision_tbp >> tl_subdivision_vprok >> etl_sub_class_vprok
+    etl_sub_class_vprok >> e_product_tbp >> [tl_product_vprok_173, tl_product_vprok_176] >> delete_folder
 
 
 tutorial_etl_dag = for_sites_netcat()
