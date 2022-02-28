@@ -26,7 +26,7 @@ RUN cd /usr/bin && \
 WORKDIR /tmp/tmp
 
 RUN python -m pip install --upgrade pip
-RUN apt-get install -y build-essential libssl-dev libffi-dev python3.9-dev unixodbc-dev
+RUN apt-get install -y build-essential libssl-dev libffi-dev python3.8-dev unixodbc-dev
 
 RUN pip install -r requirements.txt
 

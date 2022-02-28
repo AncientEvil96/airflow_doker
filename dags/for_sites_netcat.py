@@ -1,21 +1,12 @@
 from airflow.decorators import dag, task
-# from copy import deepcopy
 from datetime import datetime, timedelta
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.docker_operator import DockerOperator
-# from airflow.operators.dummy_operator import DummyOperator
 from docker.types import Mount
 from airflow.models import Connection
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_TBP_WORK')
 my_connect = Connection.get_connection_from_secrets(conn_id='MySQL_VPROK')
-
-# mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
-# mongo_pass = Variable.get("secret_mongo_pass")
-# mongo_login = Variable.get("mongo_login")
-# rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
-# rebbit_login = Variable.get("rebbit_login")
-# rebbit_pass = Variable.get("secret_rebbit_pass")
 
 today = datetime.today().strftime("%Y_%m_%d")
 

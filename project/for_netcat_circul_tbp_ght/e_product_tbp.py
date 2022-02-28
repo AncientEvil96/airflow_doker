@@ -83,6 +83,5 @@ if __name__ == '__main__':
         """
 
     local_dir = '/tmp/tmp/'
-    # local_dir = ''
 
     source.select_to_parquet(query, f'product')

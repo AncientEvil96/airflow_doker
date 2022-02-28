@@ -1,7 +1,7 @@
 from base.ms import MsSQL
 from sys import argv
 
-host, password, login, database = argv[1:]
+host, password, login, database, compass, vprok = argv[1:]
 
 if __name__ == '__main__':
     source = MsSQL(
