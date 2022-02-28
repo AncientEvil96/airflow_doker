@@ -2,6 +2,8 @@ from base.ms import MsSQL
 from sys import argv
 
 host, password, login, database, compass, vprok = argv[1:]
+local_dir = '/tmp/tmp/'
+# local_dir = ''
 
 if __name__ == '__main__':
     source = MsSQL(
@@ -114,9 +116,6 @@ if __name__ == '__main__':
         FROM RecursiveQuery
         group by TBP_ID, Subdivision_Name, parent_id, Catalogue_ID, menu_pic;
         """
-
-    local_dir = '/tmp/tmp/'
-    # local_dir = ''
 
     source.select_to_parquet(query_compass, f'{local_dir}subdivision_compass')
     source.select_to_parquet(query_vprok, f'{local_dir}subdivision_vprok')

@@ -3,6 +3,8 @@ from sys import argv
 
 host, password, login, database = argv[1:]
 
+local_dir = '/tmp/tmp/'
+
 if __name__ == '__main__':
     source = MsSQL(
         params={
@@ -82,6 +84,4 @@ if __name__ == '__main__':
         ;
         """
 
-    local_dir = '/tmp/tmp/'
-
-    source.select_to_parquet(query, f'product')
+    source.select_to_parquet(query, f'{local_dir}product')

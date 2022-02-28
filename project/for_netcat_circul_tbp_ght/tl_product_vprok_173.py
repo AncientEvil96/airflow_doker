@@ -4,6 +4,11 @@ import pandas as pd
 
 host, port, password, login, database, file = argv[1:]
 
+table = 'tmp_product'
+table_product = 'Message173'
+description = ' и другие канцтовары, можно приобрести в сети канцелярских принадлежностей "Циркуль".'
+сatalogue_id = 2
+
 
 def get_load_list():
     df = pd.read_parquet(file)
@@ -22,11 +27,6 @@ if __name__ == '__main__':
             'database': database,
         }
     )
-
-    table = 'tmp_product'
-    table_product = 'Message173'
-    description = ' и другие канцтовары, можно приобрести в сети канцелярских принадлежностей "Циркуль".'
-    сatalogue_id = 2
 
     target.connection_init()
     target.query_to_base(

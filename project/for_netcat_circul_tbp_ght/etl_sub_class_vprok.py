@@ -2,6 +2,7 @@ from base.my import MySQL
 from sys import argv
 
 host, port, password, login, database = argv[1:]
+table = 'tmp_sub_class'
 
 
 def translit_text(text):
@@ -125,8 +126,6 @@ if __name__ == '__main__':
     )
 
     df['EnglishName'] = list(map(translit_text, df['Sub_Class_Name']))
-
-    table = 'tmp_sub_class'
 
     target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
