@@ -1,42 +1,22 @@
 from airflow.models import Connection
 from airflow.decorators import dag
 from airflow.utils.dates import datetime, timedelta
-from airflow.operators.docker_operator import DockerOperator
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash import BashOperator
+from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.models import Variable
-from airflow import macros
+# from airflow import macros
 from docker.types import Mount
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
 mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 mongo_pass = Variable.get('secret_mongo_pass')
 mongo_login = Variable.get('mongo_login')
+main_folder = Variable.get('main_folder')
 
-user_folder = 'deus'
-
-main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
-folder = f'{main_folder}/tmp/mssql_checks_in_mongodb_{today}'
+folder = f'{main_folder}/tmp/mssql_checks_in_mongodb'
 working_dir = '/tmp/tmp'
-airflow_work_dir = f'/opt/airflow/tmp/mssql_checks_in_mongodb_{today}'
+airflow_work_dir = f'/opt/airflow/tmp/mssql_checks_in_mongodb'
 image = 'airflow_task_python_3.8'
-
-mount_dir = [
-    Mount(
-        source=folder,
-        target=working_dir,
-        type='bind'
-    ),
-    Mount(
-        source=f'{main_folder}/project/mssql_checks_in_mongodb',
-        target=f'{working_dir}/project',
-        type='bind'
-    ),
-    Mount(
-        source=f'{main_folder}/base',
-        target=f'{working_dir}/project/base',
-        type='bind'
-    )
-]
 
 
 @dag(
@@ -54,13 +34,32 @@ mount_dir = [
     catchup=False
 )
 def checks_ms_in_mongo():
+    mount_dir = [
+        Mount(
+            source=f'{airflow_work_dir}' + '_{{ ts_nodash }}',
+            target=working_dir,
+            type='bind'
+        ),
+        Mount(
+            source=f'{main_folder}/project/mssql_checks_in_mongodb',
+            target=f'{working_dir}/project',
+            type='bind'
+        ),
+        Mount(
+            source=f'{main_folder}/base',
+            target=f'{working_dir}/project/base',
+            type='bind'
+        )
+    ]
+
     create_folder = BashOperator(
         task_id='create_folder',
-        bash_command=f'mkdir -m 777 {{ ts_nodash }}'
+        bash_command=f'mkdir -m 777 {airflow_work_dir}' + '_{{ ts_nodash }}'
     )
 
     day_ago = -1
     mongodb = {}
+
     e_headers = DockerOperator(
         task_id='e_headers',
         image=image,
@@ -74,7 +73,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_headers.py {ms_connect}"',
+        command=f'bash -c "python project/e_headers.py $AF_EXECUTION_DATE {ms_connect}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -92,7 +91,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_payments.py {ms_connect}"',
+        command=f'bash -c "python project/e_payments.py $AF_EXECUTION_DATE {ms_connect}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -110,7 +109,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_products.py {ms_connect}"',
+        command=f'bash -c "python project/e_products.py $AF_EXECUTION_DATE {ms_connect}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -128,7 +127,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_lottery_tickets.py {ms_connect}"',
+        command=f'bash -c "python project/e_lottery_tickets.py $AF_EXECUTION_DATE {ms_connect}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -146,7 +145,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/t_data.py"',
+        command=f'bash -c "python project/t_data.py $AF_EXECUTION_DATE"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -164,7 +163,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/l_insert_many.py {mongodb}"',
+        command=f'bash -c "python project/l_insert_many.py $AF_EXECUTION_DATE {mongodb}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -182,7 +181,7 @@ def checks_ms_in_mongo():
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/l_update.py {mongodb}"',
+        command=f'bash -c "python project/l_update.py $AF_EXECUTION_DATE {mongodb}"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
         trigger_rule='one_failed'
@@ -190,11 +189,11 @@ def checks_ms_in_mongo():
 
     delete_folder = BashOperator(
         task_id='delete_folder',
-        bash_command=f'rm -r {airflow_work_dir}',
-        trigger_rule='one_success'
+        bash_command=f'rm -r {airflow_work_dir}' + '_{{ ts_nodash }}',
+        trigger_rule='none_skipped'
     )
 
-    [e_headers, e_products, e_payments, e_lottery_tickets] >> t_data >> l_insert_many
+    create_folder >> [e_headers, e_products, e_payments, e_lottery_tickets] >> t_data >> l_insert_many
     l_insert_many >> [l_update, delete_folder]
     l_update >> delete_folder
 

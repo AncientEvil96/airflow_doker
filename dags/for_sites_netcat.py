@@ -1,21 +1,19 @@
-from airflow.decorators import dag, task
+from airflow.decorators import dag
 from datetime import datetime, timedelta
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.docker_operator import DockerOperator
+from airflow.operators.bash import BashOperator
+from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 from airflow.models import Connection
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_TBP_WORK')
 my_connect = Connection.get_connection_from_secrets(conn_id='MySQL_VPROK')
 
-today = datetime.today().strftime("%Y_%m_%d")
-
 user_folder = 'deus'
 
 main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
-folder = f'{main_folder}/tmp/for_sites_netcat_{today}'
+folder = f'{main_folder}/tmp/for_sites_netcat'
 working_dir = '/tmp/tmp'
-airflow_work_dir = f'/opt/airflow/tmp/for_sites_netcat_{today}'
+airflow_work_dir = f'/opt/airflow/tmp/for_sites_netcat'
 image = 'airflow_task_python_3.8'
 
 mount_dir = [
@@ -49,7 +47,8 @@ mount_dir = [
     tags=['netcat', 'vprok', 'compass'],
     schedule_interval=timedelta(days=1),
     start_date=datetime(2022, 1, 28),
-    catchup=False
+    catchup=False,
+    max_active_runs=1
 )
 def for_sites_netcat():
     create_folder = BashOperator(
