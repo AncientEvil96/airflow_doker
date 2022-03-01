@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from base.mongo import Mongo
 
-begin_dt, mongodb = argv[1:]
+begin_dt, mongodb_s = argv[1:]
 local_dir = '/tmp/tmp/'
 
 
@@ -21,6 +21,9 @@ def get_date(date_):
 
 
 if __name__ == '__main__':
+    s = str(mongodb_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    mongodb = dict(zip(s[::2], s[1::2]))
 
     target = Mongo(params=mongodb)
     t_begin = get_date(begin_dt)

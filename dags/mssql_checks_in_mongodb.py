@@ -4,7 +4,6 @@ from airflow.utils.dates import datetime, timedelta
 from airflow.operators.bash import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.models import Variable
-# from airflow import macros
 from docker.types import Mount
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_ChekKKM')
@@ -58,7 +57,7 @@ def checks_ms_in_mongo():
     )
 
     day_ago = -1
-    mongodb = {}
+    mongodb_s = str(list(mongodb.items())).replace(', ', ',')
 
     e_headers = DockerOperator(
         task_id='e_headers',

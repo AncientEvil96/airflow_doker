@@ -2,7 +2,7 @@ from base.ms import MsSQL
 from sys import argv
 from datetime import datetime
 
-begin_dt, end_dt, sours_params = argv[1:]
+begin_dt, end_dt, sours_params_s = argv[1:]
 local_dir = '/tmp/tmp/'
 
 
@@ -40,14 +40,9 @@ def extract_lottery_tickets(sourse):
 
 
 if __name__ == '__main__':
-    # sourse = MsSQL(
-    #     params={
-    #         'host': ms_connect.host,
-    #         'password': ms_connect.password,
-    #         'login': ms_connect.login,
-    #         'database': ms_connect.schema,
-    #     }
-    # )
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    sours_params = dict(zip(s[::2], s[1::2]))
     sourse = MsSQL(
         params=sours_params
     )
