@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-begin_dt, sours_params = argv[1:]
+begin_dt = argv[1:]
 local_dir = '/tmp/tmp/'
 
 

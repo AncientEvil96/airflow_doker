@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from base.mongo import Mongo
 
-begin_dt, sours_params, mongodb = argv[1:]
+begin_dt, mongodb = argv[1:]
 local_dir = '/tmp/tmp/'
 
 
