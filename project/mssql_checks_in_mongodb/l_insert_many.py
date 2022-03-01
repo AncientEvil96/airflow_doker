@@ -1,10 +1,10 @@
-from base.ms import MsSQL
 from sys import argv
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
+from base.mongo import Mongo
 
-begin_dt, sours_params = argv[1:]
+begin_dt, sours_params, mongodb = argv[1:]
 local_dir = '/tmp/tmp/'
 
 
@@ -20,7 +20,9 @@ def get_date(date_):
     )
 
 
-def load_insert_many():
+if __name__ == '__main__':
+
+    target = Mongo(params=mongodb)
     t_begin = get_date(begin_dt)
 
     load_list = ''
@@ -37,31 +39,4 @@ def load_insert_many():
     load_list = df.to_dict('records')
 
     mongodb = {}
-
-    for line in mongo_connect:
-        if line['database'] == 'checks' and line['schema'] == 'info_checks':
-            mongodb = line
-            break
-
-    mongodb['login'] = mongo_login
-    mongodb['password'] = mongo_pass
-
-    target = Mongo(params=deepcopy(mongodb))
     target.insert_mongo(load_list)
-
-
-if __name__ == '__main__':
-    # sourse = MsSQL(
-    #     params={
-    #         'host': ms_connect.host,
-    #         'password': ms_connect.password,
-    #         'login': ms_connect.login,
-    #         'database': ms_connect.schema,
-    #     }
-    # )
-    sourse = MsSQL(
-        params=sours_params
-    )
-    load_insert_many(sourse)
-
-if __name__ == '__main__':
