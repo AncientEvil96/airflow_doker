@@ -11,11 +11,32 @@ mongo_connect = Variable.get('mongo_connect', deserialize_json=True)
 mongo_pass = Variable.get('secret_mongo_pass')
 mongo_login = Variable.get('mongo_login')
 main_folder = Variable.get('main_folder')
-
-folder = f'{main_folder}/tmp/mssql_checks_in_mongodb'
+project_name = 'checks_ms_in_mongo'
+folder = f'{main_folder}/tmp/{project_name}'
 working_dir = '/tmp/tmp'
-airflow_work_dir = f'/opt/airflow/tmp/mssql_checks_in_mongodb'
+airflow_work_dir = f'/opt/airflow/tmp/{project_name}'
 image = 'airflow_task_python_3.8'
+
+# The start of the data interval as YYYYMMDD
+mount_dir_server = f'{folder}'
+
+mount_dir = [
+    Mount(
+        source=mount_dir_server,
+        target=working_dir,
+        type='bind'
+    ),
+    Mount(
+        source=f'{main_folder}/project/{project_name}',
+        target=f'{working_dir}/project',
+        type='bind'
+    ),
+    Mount(
+        source=f'{main_folder}/base',
+        target=f'{working_dir}/project/base',
+        type='bind'
+    )
+]
 
 
 @dag(
@@ -26,38 +47,34 @@ image = 'airflow_task_python_3.8'
         'email_on_retry': False,
         'retries': 0
     },
-    dag_id='checks_ms_in_mongo',
+    dag_id=project_name,
     tags=['ms', 'mongo', 'checks'],
     schedule_interval=timedelta(days=1),
     start_date=datetime(2020, 1, 1),
     catchup=False
 )
 def checks_ms_in_mongo():
-    mount_dir = [
-        Mount(
-            source=f'{airflow_work_dir}' + '_{{ ts_nodash }}',
-            target=working_dir,
-            type='bind'
-        ),
-        Mount(
-            source=f'{main_folder}/project/mssql_checks_in_mongodb',
-            target=f'{working_dir}/project',
-            type='bind'
-        ),
-        Mount(
-            source=f'{main_folder}/base',
-            target=f'{working_dir}/project/base',
-            type='bind'
-        )
-    ]
+    b_date = '{{ macros.ds_format(ds, "%Y-%m-%d", "%Y%m%d") }}'
+    e_date = '{{ macros.ds_format(macros.ds_add(ds, 1), "%Y-%m-%d", "%Y%m%d") }}'
 
     create_folder = BashOperator(
         task_id='create_folder',
-        bash_command=f'mkdir -m 777 {airflow_work_dir}' + '_{{ ts_nodash }}'
+        bash_command=f'mkdir -p -m 777 {airflow_work_dir}/{b_date}'
     )
 
-    day_ago = -1
+    mongodb = mongo_connect[0]
+    mongodb['login'] = mongo_login
+    mongodb['password'] = mongo_pass
+
+    ms_c = {
+        'host': ms_connect.host,
+        'password': ms_connect.password,
+        'login': ms_connect.login,
+        'database': ms_connect.schema
+    }
+
     mongodb_s = str(list(mongodb.items())).replace(', ', ',')
+    ms_s = str(list(ms_c.items())).replace(', ', ',')
 
     e_headers = DockerOperator(
         task_id='e_headers',
@@ -66,13 +83,13 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': b_date,
+            'E_EXECUTION_DATE': e_date,
+            'MS': ms_s
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_headers.py $AF_EXECUTION_DATE {ms_connect}"',
+        command=f'bash -c "python project/e_headers.py $B_EXECUTION_DATE $E_EXECUTION_DATE $MS"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -84,13 +101,13 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': b_date,
+            'E_EXECUTION_DATE': e_date,
+            'MS': ms_s
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_payments.py $AF_EXECUTION_DATE {ms_connect}"',
+        command=f'bash -c "python project/e_payments.py $B_EXECUTION_DATE $E_EXECUTION_DATE $MS"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -102,13 +119,13 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': b_date,
+            'E_EXECUTION_DATE': e_date,
+            'MS': ms_s
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_products.py $AF_EXECUTION_DATE {ms_connect}"',
+        command=f'bash -c "python project/e_products.py $B_EXECUTION_DATE $E_EXECUTION_DATE $MS"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -120,13 +137,13 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': b_date,
+            'E_EXECUTION_DATE': e_date,
+            'MS': ms_s
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_lottery_tickets.py $AF_EXECUTION_DATE {ms_connect}"',
+        command=f'bash -c "python project/e_lottery_tickets.py $B_EXECUTION_DATE $E_EXECUTION_DATE $MS"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -138,13 +155,11 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': b_date,
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/t_data.py $AF_EXECUTION_DATE"',
+        command=f'bash -c "python project/t_data.py $B_EXECUTION_DATE"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -156,13 +171,12 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': e_date,
+            'MONGO': mongodb_s
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/l_insert_many.py $AF_EXECUTION_DATE {mongodb}"',
+        command=f'bash -c "python project/l_insert_many.py $B_EXECUTION_DATE $MONGO"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -174,13 +188,12 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': "{{ ds }}",
-            # 'B_EXECUTION_DATE': "{{ ts_nodash }}",
-            # 'E_EXECUTION_DATE': "{{ macros.ds_add(ts_nodash, %s) }}" % day_ago,
+            'B_EXECUTION_DATE': e_date,
+            'MONGO': mongodb_s
         },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/l_update.py $AF_EXECUTION_DATE {mongodb}"',
+        command=f'bash -c "python project/l_update.py $B_EXECUTION_DATE $MONGO"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
         trigger_rule='one_failed'
@@ -188,7 +201,7 @@ def checks_ms_in_mongo():
 
     delete_folder = BashOperator(
         task_id='delete_folder',
-        bash_command=f'rm -r {airflow_work_dir}' + '_{{ ts_nodash }}',
+        bash_command=f'rm -r {airflow_work_dir}/{b_date}',
         trigger_rule='none_skipped'
     )
 

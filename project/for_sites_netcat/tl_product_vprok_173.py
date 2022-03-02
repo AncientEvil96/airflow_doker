@@ -1,11 +1,29 @@
 from base.my import MySQL
 from sys import argv
 import pandas as pd
+from pathlib import Path
+import re
 
-host, port, password, login, database, file = argv[1:]
+sours_params_s = argv[1]
+local_dir = '/tmp/tmp/'
+
+table = 'tmp_product'
+table_product = 'Message173'
+description = ' и другие канцтовары, можно приобрести в сети канцелярских принадлежностей "Циркуль".'
+сatalogue_id = 2
 
 
 def get_load_list():
+    files = sorted(
+        list(map(str, list(Path(f'{local_dir}').rglob(f'*.parquet.gzip')))))
+
+    file = [x for x in files if re.match('.*product*', x)][0] if any(
+        "product" in word for word in files) else ''
+
+    if file == '':
+        print('not file')
+        exit(1)
+
     df = pd.read_parquet(file)
     return list(df.itertuples(index=False, name=None))
 
@@ -13,20 +31,13 @@ def get_load_list():
 if __name__ == '__main__':
     load_list = get_load_list()
 
-    target = MySQL(
-        params={
-            'host': host,
-            'port': port,
-            'password': password,
-            'login': login,
-            'database': database,
-        }
-    )
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    sours_params = dict(zip(s[::2], s[1::2]))
 
-    table = 'tmp_product'
-    table_product = 'Message176'
-    description = ' и другие товары повседневного спроса, можно приобрести в сети магазинов "ВПРОК".'
-    сatalogue_id = 1
+    target = MySQL(
+        params=sours_params
+    )
 
     target.connection_init()
     target.query_to_base(

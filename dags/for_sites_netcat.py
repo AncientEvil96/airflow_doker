@@ -6,14 +6,14 @@ from docker.types import Mount
 from airflow.models import Connection
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_TBP_WORK')
-my_connect = Connection.get_connection_from_secrets(conn_id='MySQL_VPROK')
+my_connect = Connection.get_connection_from_secrets(conn_id='MariaDB_VPROK')
 
 user_folder = 'deus'
-
+project_name = 'for_sites_netcat'
 main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
-folder = f'{main_folder}/tmp/for_sites_netcat'
+folder = f'{main_folder}/tmp/{project_name}'
 working_dir = '/tmp/tmp'
-airflow_work_dir = f'/opt/airflow/tmp/for_sites_netcat'
+airflow_work_dir = f'/opt/airflow/tmp/{project_name}'
 image = 'airflow_task_python_3.8'
 
 mount_dir = [
@@ -23,7 +23,7 @@ mount_dir = [
         type='bind'
     ),
     Mount(
-        source=f'{main_folder}/project/for_netcat_circul_tbp_ght',
+        source=f'{main_folder}/project/{project_name}',
         target=f'{working_dir}/project',
         type='bind'
     ),
@@ -51,6 +51,24 @@ mount_dir = [
     max_active_runs=1
 )
 def for_sites_netcat():
+    ms_c = {
+        'host': ms_connect.host,
+        'password': ms_connect.password,
+        'login': ms_connect.login,
+        'database': ms_connect.schema
+    }
+
+    my_c = {
+        'host': my_connect.host,
+        'port': my_connect.port,
+        'password': my_connect.password,
+        'login': my_connect.login,
+        'database': my_connect.schema
+    }
+
+    ms_s = str(list(ms_c.items())).replace(', ', ',')
+    my_s = str(list(my_c.items())).replace(', ', ',')
+
     create_folder = BashOperator(
         task_id='create_folder',
         bash_command=f'mkdir -m 777 {airflow_work_dir}'
@@ -62,9 +80,12 @@ def for_sites_netcat():
         container_name='e_subdivision_tbp_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
+        environment={
+            'MS': ms_s
+        },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_subdivision_tbp.py {ms_connect.host} {ms_connect.password} {ms_connect.login} {ms_connect.schema}"',
+        command=f'bash -c "python project/e_subdivision_tbp.py $MS"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -75,9 +96,12 @@ def for_sites_netcat():
         container_name='tl_subdivision_vprok_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
+        environment={
+            'MY': my_s
+        },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/tl_subdivision_vprok.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        command=f'bash -c "python project/tl_subdivision_vprok.py $MY"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -88,9 +112,12 @@ def for_sites_netcat():
         container_name='etl_sub_class_vprok_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
+        environment={
+            'MY': my_s
+        },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/etl_sub_class_vprok.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        command=f'bash -c "python project/etl_sub_class_vprok.py $MY"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -101,9 +128,12 @@ def for_sites_netcat():
         container_name='e_product_tbp_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
+        environment={
+            'MS': ms_s
+        },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/e_product_tbp.py {my_connect.host} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        command=f'bash -c "python project/e_product_tbp.py $MS"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -114,9 +144,12 @@ def for_sites_netcat():
         container_name='tl_product_vprok_173_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
+        environment={
+            'MY': my_s
+        },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/tl_product_vprok_173.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        command=f'bash -c "python project/tl_product_vprok_173.py $MY"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )
@@ -127,9 +160,12 @@ def for_sites_netcat():
         container_name='tl_product_vprok_176_{{ task_instance.job_id }}',
         api_version='1.41',
         auto_remove=True,
+        environment={
+            'MY': my_s
+        },
         mounts=mount_dir,
         working_dir=working_dir,
-        command=f'bash -c "python project/tl_product_vprok_176.py {my_connect.host} {my_connect.port} {my_connect.password} {my_connect.login} {my_connect.schema}"',
+        command=f'bash -c "python project/tl_product_vprok_176.py $MY"',
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge"
     )

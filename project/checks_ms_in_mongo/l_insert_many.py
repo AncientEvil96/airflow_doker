@@ -5,11 +5,11 @@ from pathlib import Path
 from base.mongo import Mongo
 
 begin_dt, mongodb_s = argv[1:]
-local_dir = '/tmp/tmp/'
+local_dir = f'/tmp/tmp/{begin_dt}/'
 
 
 def get_date(date_):
-    executor_date = datetime.strptime(str(date_), '%Y-%m-%d %H:%M:%S')
+    executor_date = datetime.strptime(str(date_), '%Y%m%d')
     return datetime(
         executor_date.year + 2000,
         executor_date.month,
@@ -21,18 +21,18 @@ def get_date(date_):
 
 
 if __name__ == '__main__':
-
     s = str(mongodb_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
         ',')
     mongodb = dict(zip(s[::2], s[1::2]))
 
+    target = Mongo(params=mongodb)
     t_begin = get_date(begin_dt)
 
     load_list = ''
     try:
-        load_list = Path(f'{local_dir}{t_begin.strftime("%Y%m%d%H%M%S")}').rglob(f'checks.parquet.gzip')[0]
+        load_list = Path(f'{local_dir}').rglob(f'checks.parquet.gzip')[0]
     except FileNotFoundError:
-        print(f'{local_dir}{t_begin.strftime("%Y%m%d%H%M%S")}/checks.parquet.gzip not file checks.parquet.gzip')
+        print(f'{local_dir}checks.parquet.gzip not file checks.parquet.gzip')
         exit(1)
 
     df = pd.read_parquet(load_list)
@@ -40,5 +40,6 @@ if __name__ == '__main__':
         lambda x: [list(i) for i in x])
 
     load_list = df.to_dict('records')
-    target = Mongo(params=mongodb)
-    target.update_mongo(load_list)
+
+    mongodb = {}
+    target.insert_mongo(load_list)

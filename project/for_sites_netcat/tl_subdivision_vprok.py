@@ -1,14 +1,29 @@
 from base.my import MySQL
 from sys import argv
 import pandas as pd
+from pathlib import Path
+import re
 
-host, port, password, login, database, compass, vprok = argv[1:]
+sours_params_s = argv[1]
+local_dir = '/tmp/tmp/'
+
+
+def get_df(key_):
+    files = list(map(str, list(Path(f'{local_dir}').rglob(f'{key_}.parquet.gzip'))))
+    file = [x for x in files if re.match(f'.*{key_}*', x)][0] if any(
+        f'{key_}' in word for word in files) else ''
+
+    if file == '':
+        print('not file')
+        exit(1)
+
+    return pd.read_parquet(file)
 
 
 def get_load_list():
-    df1 = pd.read_parquet(vprok)
+    df1 = get_df('subdivision_vprok')
     df1.loc[df1['parent_id'] == 0, 'Parent_Sub_ID'] = 421
-    df2 = pd.read_parquet(compass)
+    df2 = get_df('subdivision_compass')
     df2.loc[df2['parent_id'] == 0, 'Parent_Sub_ID'] = 52
     df = pd.concat([df1, df2])
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].fillna(0)
@@ -18,16 +33,15 @@ def get_load_list():
 
 
 if __name__ == '__main__':
+
     load_list = get_load_list()
 
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    sours_params = dict(zip(s[::2], s[1::2]))
+
     target = MySQL(
-        params={
-            'host': host,
-            'port': port,
-            'password': password,
-            'login': login,
-            'database': database,
-        }
+        params=sours_params
     )
 
     table = 'tmp_subdivision_netcat'
@@ -41,7 +55,7 @@ if __name__ == '__main__':
                 TBP_ID           int                                              not null,
                 Subdivision_Name varchar(255) default ''                          not null,
                 EnglishName      varchar(64)  default concat('category-', TBP_ID) not null,
-                Parent_Sub_ID    int,
+                Parent_Sub_ID    int          default 0,
                 parent_id        int,
                 Catalogue_ID     int          default 0                           not null,
                 Priority         int          default TBP_ID                      null,
@@ -59,11 +73,11 @@ if __name__ == '__main__':
     query = f"""
             INSERT INTO {table}
                 (
-                    TBP_ID,
-                    Subdivision_Name,
-                    parent_id,
-                    Catalogue_ID,
-                    menu_pic,
+                    TBP_ID           ,
+                    Subdivision_Name ,
+                    parent_id        ,
+                    Catalogue_ID     ,
+                    menu_pic         ,
                     Parent_Sub_ID
                  )
             VALUES (%s, %s, %s, %s, %s, %s);

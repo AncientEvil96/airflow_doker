@@ -1,18 +1,16 @@
 from base.ms import MsSQL
 from sys import argv
 
-host, password, login, database = argv[1:]
-
+sours_params_s = argv[1]
 local_dir = '/tmp/tmp/'
 
 if __name__ == '__main__':
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    sours_params = dict(zip(s[::2], s[1::2]))
+
     source = MsSQL(
-        params={
-            'host': host,
-            'password': password,
-            'login': login,
-            'database': database,
-        }
+        params=sours_params
     )
 
     query = """

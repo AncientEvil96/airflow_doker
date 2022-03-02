@@ -3,11 +3,11 @@ from sys import argv
 from datetime import datetime
 
 begin_dt, end_dt, sours_params_s = argv[1:]
-local_dir = '/tmp/tmp/'
+local_dir = f'/tmp/tmp/{begin_dt}/'
 
 
 def get_date(date_):
-    executor_date = datetime.strptime(str(date_), '%Y-%m-%d %H:%M:%S')
+    executor_date = datetime.strptime(str(date_), '%Y%m%d')
     return datetime(
         executor_date.year + 2000,
         executor_date.month,
@@ -65,7 +65,7 @@ def extract_headers(sourse):
 
     sourse.select_to_parquet(
         query,
-        f'{local_dir}{t_begin.strftime("%Y%m%d%H%M%S")}/checks_headers'
+        f'{local_dir}checks_headers'
     )
 
 

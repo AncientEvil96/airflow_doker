@@ -5,12 +5,12 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-begin_dt = argv[1:]
-local_dir = '/tmp/tmp/'
+begin_dt = argv[1:][0]
+local_dir = f'/tmp/tmp/{begin_dt}'
 
 
 def get_date(date_):
-    executor_date = datetime.strptime(str(date_), '%Y-%m-%d %H:%M:%S')
+    executor_date = datetime.strptime(str(date_), '%Y%m%d')
     return datetime(
         executor_date.year + 2000,
         executor_date.month,
