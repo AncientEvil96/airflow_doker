@@ -192,7 +192,7 @@ if __name__ == '__main__':
             SELECT Subdivision.Subdivision_ID as Subdivision_ID,
                    new.Subdivision_Name       as Subdivision_Name,
                    new.EnglishName            as EnglishName,
-                   new.Parent_Sub_ID         as Parent_Sub_ID,
+                   new.Parent_Sub_ID          as Parent_Sub_ID,
                    new.Catalogue_ID           as Catalogue_ID,
                    new.TBP_ID                 as Priority,
                    new.menu_pic               as menu_pic,
