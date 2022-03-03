@@ -33,9 +33,6 @@ class MySQL:
             port=self.port,
             database=self.database)
 
-    # def __exit__(self, exc_type, exc_val, exc_tb):
-    #     self.connect.close()
-
     def select_to_df(self, query: str) -> pd.DataFrame:
         """
         получение данных в формате DataFrame
@@ -74,8 +71,11 @@ class MySQL:
             print('use init_connection function')
             return
         cursor = self.connect.cursor()
-        cursor.executemany(query, load_list)
-        self.connect.commit()
+
+        iter_ = len(load_list) // 10000 + 2
+        for i in range(1, iter_):
+            cursor.executemany(query, load_list[(i - 1) * 10000:i * 10000])
+            self.connect.commit()
 
     def query_to_base(self, query: str):
         """

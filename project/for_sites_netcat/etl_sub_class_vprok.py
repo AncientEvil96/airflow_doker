@@ -141,7 +141,7 @@ if __name__ == '__main__':
                 Checked        smallint default 1  not null,
                 CustomSettings text     default '' not null,
                 EnglishName    varchar(64)         not null
-            );
+            ) ENGINE=InnoDB DEFAULT CHARSET=UTF8;
         """
     )
 

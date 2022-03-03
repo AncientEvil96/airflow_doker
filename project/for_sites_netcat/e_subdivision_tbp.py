@@ -2,9 +2,12 @@ from base.ms import MsSQL
 from sys import argv
 
 sours_params_s = argv[1]
+# sours_params_s = "[('host','192.168.0.177'),('password','Delay159'),('login','sa'),('database','TBP_WORK')]"
 local_dir = '/tmp/tmp/'
+# local_dir = ''
 
 if __name__ == '__main__':
+    # print(sours_params_s)
     s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
         ',')
     sours_params = dict(zip(s[::2], s[1::2]))

@@ -5,7 +5,9 @@ from pathlib import Path
 import re
 
 sours_params_s = argv[1]
+# sours_params_s = "[('host','84.38.187.211'),('port',32106),('password','Zrn5qDfXGklpJ59'),('login','vprok_transfer'),('database','vprok')]"
 local_dir = '/tmp/tmp/'
+# local_dir = ''
 
 
 def get_df(key_):
@@ -23,18 +25,25 @@ def get_df(key_):
 def get_load_list():
     df1 = get_df('subdivision_vprok')
     df1.loc[df1['parent_id'] == 0, 'Parent_Sub_ID'] = 421
+    # df1['Title'] = df1['Subdivision_Name'] + ' | сеть магазинов "ВПРОК"'
     df2 = get_df('subdivision_compass')
     df2.loc[df2['parent_id'] == 0, 'Parent_Sub_ID'] = 52
+    # df2['Title'] = df1['Subdivision_Name'] + ' | в сети "Циркуль"'
     df = pd.concat([df1, df2])
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].fillna(0)
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].astype('int')
+
+    # print(df.dtypes)
 
     return list(df.itertuples(index=False, name=None))
 
 
 if __name__ == '__main__':
-
+    # print(sours_params_s)
     load_list = get_load_list()
+
+    # for i in load_list:
+    #     print(i)
 
     s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
         ',')
@@ -45,30 +54,39 @@ if __name__ == '__main__':
     )
 
     table = 'tmp_subdivision_netcat'
-
+    # try:
     target.connection_init()
+    # except Exception as err:
+        # print(err)
+
+    # exit(0)
+
+    print('создаем временную таблицу')
+
     target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
         f"""
-        create temporary table {table}
-            (
-                TBP_ID           int                                              not null,
-                Subdivision_Name varchar(255) default ''                          not null,
-                EnglishName      varchar(64)  default concat('category-', TBP_ID) not null,
-                Parent_Sub_ID    int          default 0,
-                parent_id        int,
-                Catalogue_ID     int          default 0                           not null,
-                Priority         int          default TBP_ID                      null,
-                DisallowIndexing int          default IF(parent_id = 0,1,-1)      null,
-                IncludeInSitemap int          default IF(parent_id = 0,1,-1)      null,
-                menu_pic         char(255)                                        null,
-                Title            varchar(255) default IF(Catalogue_ID = 1, concat(Subdivision_Name, ' | сеть магазинов "ВПРОК"'),
-                                             concat(Subdivision_Name, ' | в сети "Циркуль"')) null,
-                Template_ID int               default IF(Catalogue_ID = 1,2,5)    null,
-                KEY {table}_TBP_ID_Catalogue_ID_ui (TBP_ID, Catalogue_ID)
-        );
+        create OR REPLACE temporary table {table}
+        (
+            TBP_ID           int                                                                      not null,
+            Subdivision_Name varchar(255) default ''                                                  not null,
+            EnglishName      varchar(64)  default concat('category-', TBP_ID)                         not null,
+            Parent_Sub_ID    int          default 0,
+            parent_id        int,
+            Catalogue_ID     int          default 0                                                   not null,
+            Priority         int          default TBP_ID                                              null,
+            DisallowIndexing int          default IF(parent_id = 0, 1, -1)                            null,
+            IncludeInSitemap int          default IF(parent_id = 0, 1, -1)                            null,
+            menu_pic         char(255)                                                                null,
+            Title            varchar(255) default IF(Catalogue_ID = 1, concat(Subdivision_Name, ' | сеть магазинов ВПРОК'),
+                                                     concat(Subdivision_Name, ' | в сети "Циркуль"')) null,
+            Template_ID      int          default IF(Catalogue_ID = 1, 2, 5)                          null,
+            KEY {table}_TBP_ID_Catalogue_ID_ui (TBP_ID, Catalogue_ID)
+        ) ENGINE=InnoDB DEFAULT CHARSET=UTF8;
         """
     )
+
+    print('заполняем данными')
 
     query = f"""
             INSERT INTO {table}
@@ -78,12 +96,14 @@ if __name__ == '__main__':
                     parent_id        ,
                     Catalogue_ID     ,
                     menu_pic         ,
-                    Parent_Sub_ID
+                    Parent_Sub_ID     
                  )
             VALUES (%s, %s, %s, %s, %s, %s);
         """
 
     target.load_many_to_base(query, load_list)
+
+    print('удаляем ненужное')
 
     # удаление ненужных данных
     target.query_to_base(
@@ -100,6 +120,8 @@ if __name__ == '__main__':
                                            group by Subdivision.TBP_ID, Subdivision.Catalogue_ID) as new);
         """
     )
+
+    print('создаем новые если такие есть')
 
     # создаем новые если такие есть
     target.query_to_base(
@@ -161,6 +183,8 @@ if __name__ == '__main__':
     # удаляем временную таблицу если она есть
     target.query_to_base(f'drop table if exists {from_load};')
 
+    print('проверка + обновление данных')
+
     # проверка + обновление данных
     target.query_to_base(
         f"""
@@ -178,7 +202,7 @@ if __name__ == '__main__':
                    new.DisallowIndexing       as DisallowIndexing,
                    new.IncludeInSitemap       as IncludeInSitemap,
                    new.Hidden_URL             as Hidden_URL
-            
+
             FROM (
                      SELECT Subdivision.Subdivision_ID                             as Subdivision_ID,
                             tt1.Subdivision_Name                            as Subdivision_Name,
