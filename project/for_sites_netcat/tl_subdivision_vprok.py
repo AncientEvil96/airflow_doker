@@ -78,7 +78,8 @@ if __name__ == '__main__':
             DisallowIndexing int          default IF(parent_id = 0, 1, -1)                            null,
             IncludeInSitemap int          default IF(parent_id = 0, 1, -1)                            null,
             menu_pic         char(255)                                                                null,
-            Title            varchar(255) default IF(Catalogue_ID = 1, concat(Subdivision_Name, ' | сеть магазинов ВПРОК'),
+            Title            varchar(255) default IF(Catalogue_ID = 1, 
+                                                     concat(Subdivision_Name, ' | сеть магазинов ВПРОК'),
                                                      concat(Subdivision_Name, ' | в сети "Циркуль"')) null,
             Template_ID      int          default IF(Catalogue_ID = 1, 2, 5)                          null,
             KEY {table}_TBP_ID_Catalogue_ID_ui (TBP_ID, Catalogue_ID)

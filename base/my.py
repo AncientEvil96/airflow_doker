@@ -87,3 +87,4 @@ class MySQL:
 
         cursor = self.connect.cursor()
         cursor.execute(query)
+        self.connect.commit()

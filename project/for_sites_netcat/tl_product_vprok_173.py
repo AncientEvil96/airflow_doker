@@ -5,9 +5,7 @@ from pathlib import Path
 import re
 
 sours_params_s = argv[1]
-# sours_params_s = "[('host','84.38.187.211'),('port',32106),('password','Zrn5qDfXGklpJ59'),('login','vprok_transfer'),('database','vprok')]"
 local_dir = '/tmp/tmp/'
-# local_dir = ''
 
 table = 'tmp_product'
 table_product = 'Message173'
