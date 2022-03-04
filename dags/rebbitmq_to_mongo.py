@@ -1,8 +1,9 @@
-from airflow.decorators import dag, task
+from airflow.decorators import dag
 from datetime import datetime, timedelta
-from airflow.operators.docker_operator import DockerOperator
+from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 from airflow.models import Variable
+import json
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
 mongo_pass = Variable.get("secret_mongo_pass")
@@ -10,21 +11,20 @@ mongo_login = Variable.get("mongo_login")
 rebbit_srv = Variable.get("rebbit_srv", deserialize_json=True)
 rebbit_login = Variable.get("rebbit_login")
 rebbit_pass = Variable.get("secret_rebbit_pass")
+main_folder = Variable.get('main_folder')
 
 project_name = 'rebbitmq_to_mongo'
-user_folder = 'deus'
-main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
-folder = f'{main_folder}/tmp/{project_name}_{today}'
+folder = f'{main_folder}/tmp/{project_name}'
 working_dir = '/tmp/tmp'
-airflow_work_dir = f'/opt/airflow/tmp/{project_name}_{today}'
+airflow_work_dir = f'/opt/airflow/tmp/{project_name}'
 image = 'airflow_task_python_3.8'
 
 mount_dir = [
-    Mount(
-        source=folder,
-        target=working_dir,
-        type='bind'
-    ),
+    # Mount(
+    #     source=folder,
+    #     target=working_dir,
+    #     type='bind'
+    # ),
     Mount(
         source=f'{main_folder}/project/{project_name}',
         target=f'{working_dir}/project',
@@ -48,7 +48,7 @@ mount_dir = [
     },
     dag_id=project_name,
     tags=['rebbitmq', 'mongo', 'customer', 'checks'],
-    schedule_interval=timedelta(seconds=10),
+    schedule_interval=timedelta(days=1),
     start_date=datetime(2022, 3, 1),
     catchup=False,
     max_active_runs=1
@@ -62,15 +62,19 @@ def rebbit_to_mongo_etl():
             mongodb['login'] = mongo_login
             mongodb['password'] = mongo_pass
 
+            rebbitmq_s = str(list(rebbitmq.items())).replace(', ', ',')
+            mongodb_s = str(list(mongodb.items())).replace(', ', ',')
+
             DockerOperator(
-                task_id=f"rebbit_to_mongo_etl_{rebbitmq['host']}_{rebbitmq['queue']}_{mongodb['host']}_{mongodb['database']}",
+                task_id=f"RM_{rebbitmq['host']}_{rebbitmq['queue']}_M_{mongodb['host']}_{mongodb['database']}".replace(
+                    '.tkvprok.ru', '').replace('MDB_WhoIs_queue_', ''),
                 image=image,
                 container_name='rebbit_to_mongo_etl_{{ task_instance.job_id }}',
                 api_version='1.41',
                 auto_remove=True,
                 mounts=mount_dir,
                 working_dir=working_dir,
-                command=f'bash -c "python project/e_subdivision_tbp.py {rebbitmq} {mongodb}"',
+                command=f'python project/etl_rebbit.py {rebbitmq_s} {mongodb_s}',
                 docker_url="unix://var/run/docker.sock",
                 network_mode="bridge"
             )

@@ -1,11 +1,29 @@
 from base.my import MySQL
 from sys import argv
 import pandas as pd
+from pathlib import Path
+import re
 
-host, port, password, login, database, file = argv[1:]
+sours_params_s = argv[1]
+local_dir = '/tmp/tmp/'
+
+table = 'tmp_product'
+table_product = 'Message173'
+description = ' и другие канцтовары, можно приобрести в сети канцелярских принадлежностей "Циркуль".'
+сatalogue_id = 2
 
 
 def get_load_list():
+    files = sorted(
+        list(map(str, list(Path(f'{local_dir}').rglob(f'*.parquet.gzip')))))
+
+    file = [x for x in files if re.match('.*product*', x)][0] if any(
+        "product" in word for word in files) else ''
+
+    if file == '':
+        print('not file')
+        exit(1)
+
     df = pd.read_parquet(file)
     return list(df.itertuples(index=False, name=None))
 
@@ -13,22 +31,16 @@ def get_load_list():
 if __name__ == '__main__':
     load_list = get_load_list()
 
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    sours_params = dict(zip(s[::2], s[1::2]))
+
     target = MySQL(
-        params={
-            'host': host,
-            'port': port,
-            'password': password,
-            'login': login,
-            'database': database,
-        }
+        params=sours_params
     )
 
-    table = 'tmp_product'
-    table_product = 'Message176'
-    description = ' и другие товары повседневного спроса, можно приобрести в сети магазинов "ВПРОК".'
-    сatalogue_id = 1
-
     target.connection_init()
+    target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
         f"""
         CREATE OR REPLACE TEMPORARY TABLE {table}
@@ -58,28 +70,27 @@ if __name__ == '__main__':
                 Keyword         char(255)    default concat('goods-', Article),
                 ncSMO_Title     varchar(255) default Name,
                 KEY tmp_product_parent_id_index (parent_id)
-            )
+            ) ENGINE=InnoDB DEFAULT CHARSET=UTF8
         ;
         """
     )
-
     query = f"""
                 INSERT INTO {table}
                     (
-                        parent_id         ,
-                        Article           ,
-                        Name             ,
-                        Description      ,
-                        VendorTbp        ,
-                        Vendor           ,
+                        parent_id       ,
+                        Article         ,
+                        Name            ,
+                        Description     ,
+                        VendorTbp       ,
+                        Vendor          ,
                         Weight          ,
                         PackageSize2    ,
                         PackageSize3    ,
                         PackageSize1    ,
-                        Image            ,
+                        Image           ,
                         Price           ,
                         PriceMinimum    ,
-                        Status            ,
+                        Status          ,
                         StockUnits        
                      )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
@@ -131,35 +142,35 @@ if __name__ == '__main__':
             ncDescription     text         default '',
             ncSMO_Description text         default '',
             ncSMO_Title       varchar(255) default Name
-        )
-        SELECT Product.Message_ID                                                                          as Message_ID,
-               tmp_product.Article                                                                         as Article,
-               Sub_Class.Sub_Class_ID                                                                      as Sub_Class_ID,
-               Subdivision.Subdivision_ID                                                                  as Subdivision_ID,
-               tmp_product.Name                                                                            as Name,
-               tmp_product.Description                                                                     as Description,
-               tmp_product.VendorTbp                                                                       as VendorTbp,
-               tmp_product.Vendor                                                                          as Vendor,
-               tmp_product.Weight                                                                          as Weight,
-               tmp_product.PackageSize2                                                                    as PackageSize2,
-               tmp_product.PackageSize3                                                                    as PackageSize3,
-               tmp_product.PackageSize1                                                                    as PackageSize1,
-               tmp_product.ncTitle                                                                         as ncTitle,
-               tmp_product.Image                                                                           as Image,
-               tmp_product.Price                                                                           as Price,
-               tmp_product.PriceMinimum                                                                    as PriceMinimum,
-               tmp_product.Status                                                                          as Status,
-               tmp_product.StockUnits                                                                      as StockUnits,
-               tmp_product.VariantName                                                                     as VariantName,
-               tmp_product.User_ID                                                                         as User_ID,
-               tmp_product.LastUser_ID                                                                     as LastUser_ID,
-               tmp_product.Checked                                                                         as Checked,
-               tmp_product.Currency                                                                        as Currency,
-               tmp_product.CurrencyMinimum                                                                 as CurrencyMinimum,
-               tmp_product.Keyword                                                                         as Keyword,
-               CONCAT(tmp_product.Name,'{description}')                                                    as ncDescription,
-               CONCAT(tmp_product.Name,'{description}')                                                    as ncSMO_Description,
-               tmp_product.ncSMO_Title                                                                     as ncSMO_Title
+        ) ENGINE=InnoDB DEFAULT CHARSET=UTF8
+        SELECT Product.Message_ID                       as Message_ID,
+               tmp_product.Article                      as Article,
+               Sub_Class.Sub_Class_ID                   as Sub_Class_ID,
+               Subdivision.Subdivision_ID               as Subdivision_ID,
+               tmp_product.Name                         as Name,
+               tmp_product.Description                  as Description,
+               tmp_product.VendorTbp                    as VendorTbp,
+               tmp_product.Vendor                       as Vendor,
+               tmp_product.Weight                       as Weight,
+               tmp_product.PackageSize2                 as PackageSize2,
+               tmp_product.PackageSize3                 as PackageSize3,
+               tmp_product.PackageSize1                 as PackageSize1,
+               tmp_product.ncTitle                      as ncTitle,
+               tmp_product.Image                        as Image,
+               tmp_product.Price                        as Price,
+               tmp_product.PriceMinimum                 as PriceMinimum,
+               tmp_product.Status                       as Status,
+               tmp_product.StockUnits                   as StockUnits,
+               tmp_product.VariantName                  as VariantName,
+               tmp_product.User_ID                      as User_ID,
+               tmp_product.LastUser_ID                  as LastUser_ID,
+               tmp_product.Checked                      as Checked,
+               tmp_product.Currency                     as Currency,
+               tmp_product.CurrencyMinimum              as CurrencyMinimum,
+               tmp_product.Keyword                      as Keyword,
+               CONCAT(tmp_product.Name,'{description}') as ncDescription,
+               CONCAT(tmp_product.Name,'{description}') as ncSMO_Description,
+               tmp_product.ncSMO_Title                  as ncSMO_Title
         FROM {table} as tmp_product
                  INNER JOIN Subdivision
                             ON tmp_product.parent_id = Subdivision.TBP_ID
