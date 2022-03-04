@@ -1,7 +1,10 @@
 from base.my import MySQL
 from sys import argv
 
-host, port, password, login, database = argv[1:]
+sours_params_s = argv[1]
+local_dir = '/tmp/tmp/'
+
+table = 'tmp_sub_class'
 
 
 def translit_text(text):
@@ -79,7 +82,9 @@ def translit_text(text):
         'Ґ': 'g',
         'Ї': 'i',
         'Є': 'e',
-        '—': '-'
+        '—': '-',
+        ',': '',
+        ' ': '-'
     }
     s = ''
     for i in text:
@@ -89,14 +94,12 @@ def translit_text(text):
 
 
 if __name__ == '__main__':
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
+    sours_params = dict(zip(s[::2], s[1::2]))
+
     target = MySQL(
-        params={
-            'host': host,
-            'port': port,
-            'password': password,
-            'login': login,
-            'database': database,
-        }
+        params=sours_params
     )
 
     target.connection_init()
@@ -126,8 +129,6 @@ if __name__ == '__main__':
 
     df['EnglishName'] = list(map(translit_text, df['Sub_Class_Name']))
 
-    table = 'tmp_sub_class'
-
     target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
         f"""
@@ -140,7 +141,7 @@ if __name__ == '__main__':
                 Checked        smallint default 1  not null,
                 CustomSettings text     default '' not null,
                 EnglishName    varchar(64)         not null
-            );
+            ) ENGINE=InnoDB DEFAULT CHARSET=UTF8;
         """
     )
 
