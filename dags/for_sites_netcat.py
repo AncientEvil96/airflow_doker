@@ -122,6 +122,22 @@ def for_sites_netcat():
         network_mode="bridge"
     )
 
+    etl_cheked = DockerOperator(
+        task_id='etl_cheked',
+        image=image,
+        container_name='etl_cheked_{{ task_instance.job_id }}',
+        api_version='1.41',
+        auto_remove=True,
+        environment={
+            'MY': my_s
+        },
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command=f'bash -c "python project/etl_cheked.py $MY"',
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge"
+    )
+
     e_product_tbp = DockerOperator(
         task_id='e_product_tbp',
         image=image,
@@ -177,7 +193,8 @@ def for_sites_netcat():
     )
 
     create_folder >> e_subdivision_tbp >> tl_subdivision_vprok >> etl_sub_class_vprok
-    etl_sub_class_vprok >> e_product_tbp >> [tl_product_vprok_173, tl_product_vprok_176] >> delete_folder
+    etl_sub_class_vprok >> etl_cheked >> e_product_tbp
+    e_product_tbp >> [tl_product_vprok_173, tl_product_vprok_176] >> delete_folder
 
 
 tutorial_etl_dag = for_sites_netcat()

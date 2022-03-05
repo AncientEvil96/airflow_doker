@@ -51,7 +51,7 @@ mount_dir = [
     tags=['ms', 'mongo', 'checks'],
     schedule_interval=timedelta(days=1),
     start_date=datetime(2020, 1, 1),
-    catchup=False
+    catchup=True
 )
 def checks_ms_in_mongo():
     b_date = '{{ macros.ds_format(ds, "%Y-%m-%d", "%Y%m%d") }}'
@@ -171,7 +171,7 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': e_date,
+            'B_EXECUTION_DATE': b_date,
             'MONGO': mongodb_s
         },
         mounts=mount_dir,
@@ -188,7 +188,7 @@ def checks_ms_in_mongo():
         api_version='1.41',
         auto_remove=True,
         environment={
-            'B_EXECUTION_DATE': e_date,
+            'B_EXECUTION_DATE': b_date,
             'MONGO': mongodb_s
         },
         mounts=mount_dir,

@@ -5,8 +5,8 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-begin_dt = argv[1:][0]
-local_dir = f'/tmp/tmp/{begin_dt}'
+begin_dt = argv[1]
+local_dir = f'/tmp/tmp/{begin_dt}/'
 
 
 def get_date(date_):
@@ -25,7 +25,7 @@ def transform():
     t_begin = get_date(begin_dt)
 
     files = sorted(
-        list(map(str, list(Path(f'{local_dir}{t_begin.strftime("%Y%m%d%H%M%S")}').rglob(f'*.parquet.gzip')))))
+        list(map(str, list(Path(local_dir).rglob(f'*.parquet.gzip')))))
 
     headers = [x for x in files if re.match('.*checks_headers*', x)][0] if any(
         "checks_headers" in word for word in files) else ''
@@ -80,7 +80,7 @@ def transform():
     else:
         headers['lottery_tickets'] = headers['uuid_db'].apply(lambda x: [])
 
-    file = File(f'{local_dir}{t_begin.strftime("%Y%m%d%H%M%S")}/checks')
+    file = File(f'{local_dir}checks')
     return file.create_file_parquet(headers)
 
 

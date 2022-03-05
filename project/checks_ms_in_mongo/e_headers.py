@@ -70,7 +70,8 @@ def extract_headers(sourse):
 
 
 if __name__ == '__main__':
-    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(',')
+    s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
+        ',')
     sours_params = dict(zip(s[::2], s[1::2]))
 
     sourse = MsSQL(

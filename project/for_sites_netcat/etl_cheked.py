@@ -1,10 +1,10 @@
 from base.my import MySQL
 from sys import argv
 
-sours_params_s = argv[1]
-# sours_params_s = "[('host','84.38.187.211'),('port',32106),('password','Zrn5qDfXGklpJ59'),('login','vprok_transfer'),('database','vprok')]"
-local_dir = '/tmp/tmp/'
-# local_dir = ''
+# sours_params_s = argv[1]
+sours_params_s = "[('host','84.38.187.211'),('port',32106),('password','Zrn5qDfXGklpJ59'),('login','vprok_transfer'),('database','vprok')]"
+# local_dir = '/tmp/tmp/'
+local_dir = ''
 
 table = 'tmp_checked'
 
@@ -19,10 +19,13 @@ if __name__ == '__main__':
 
     target.connection_init()
 
+    print('удаляем временную таблицу')
     target.query_to_base(f'drop table if exists {table};')
+
+    print('создаем временную таблицу, добавляем уникальные категории циркуля')
     target.query_to_base(
-        """
-        CREATE TABLE tt1
+        f"""
+        CREATE temporary TABLE {table}
             (Subdivision_ID int)
         WITH RECURSIVE
             rec (Subdivision_ID)
@@ -38,9 +41,10 @@ if __name__ == '__main__':
         """
     )
 
+    print('добавляем данные по впроку')
     target.query_to_base(
-        """
-        insert into tt1
+        f"""
+        insert into {table}
         WITH RECURSIVE
             rec (Subdivision_ID)
         AS
@@ -55,19 +59,20 @@ if __name__ == '__main__':
         """
     )
 
+    print('добавляем данные по впроку')
     target.query_to_base(
-        """
+        f"""
         UPDATE Subdivision
         SET Subdivision.Checked = 1
-        WHERE Subdivision_ID in (SELECT Subdivision_ID FROM tt1 GROUP BY Subdivision_ID);
+        WHERE Subdivision_ID in (SELECT Subdivision_ID FROM {table} GROUP BY Subdivision_ID);
         """
     )
 
     target.query_to_base(
-        """
+        f"""
         UPDATE Subdivision
         SET Subdivision.Checked = 0
-        WHERE Subdivision_ID not in (SELECT Subdivision_ID FROM tt1 GROUP BY Subdivision_ID);
+        WHERE Subdivision_ID not in (SELECT Subdivision_ID FROM {table} GROUP BY Subdivision_ID);
         """
     )
 

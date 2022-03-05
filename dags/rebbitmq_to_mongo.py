@@ -48,7 +48,7 @@ mount_dir = [
     },
     dag_id=project_name,
     tags=['rebbitmq', 'mongo', 'customer', 'checks'],
-    schedule_interval=timedelta(days=1),
+    schedule_interval=timedelta(minutes=1),
     start_date=datetime(2022, 3, 1),
     catchup=False,
     max_active_runs=1
@@ -72,9 +72,13 @@ def rebbit_to_mongo_etl():
                 container_name='rebbit_to_mongo_etl_{{ task_instance.job_id }}',
                 api_version='1.41',
                 auto_remove=True,
+                environment={
+                    'REBBIT': rebbitmq_s,
+                    'MONGO': mongodb_s
+                },
                 mounts=mount_dir,
                 working_dir=working_dir,
-                command=f'python project/etl_rebbit.py {rebbitmq_s} {mongodb_s}',
+                command=f'bash -c "python project/etl_rebbit.py $REBBIT $MONGO"',
                 docker_url="unix://var/run/docker.sock",
                 network_mode="bridge"
             )
