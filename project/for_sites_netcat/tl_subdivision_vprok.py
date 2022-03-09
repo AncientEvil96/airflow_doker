@@ -23,10 +23,8 @@ def get_df(key_):
 def get_load_list():
     df1 = get_df('subdivision_vprok')
     df1.loc[df1['parent_id'] == 0, 'Parent_Sub_ID'] = 421
-    # df1['Title'] = df1['Subdivision_Name'] + ' | сеть магазинов "ВПРОК"'
     df2 = get_df('subdivision_compass')
     df2.loc[df2['parent_id'] == 0, 'Parent_Sub_ID'] = 52
-    # df2['Title'] = df1['Subdivision_Name'] + ' | в сети "Циркуль"'
     df = pd.concat([df1, df2])
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].fillna(0)
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].astype('int')
@@ -265,3 +263,5 @@ if __name__ == '__main__':
     )
 
     target.connection_close()
+
+

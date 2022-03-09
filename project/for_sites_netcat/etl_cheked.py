@@ -1,10 +1,8 @@
 from base.my import MySQL
 from sys import argv
 
-# sours_params_s = argv[1]
-sours_params_s = "[('host','84.38.187.211'),('port',32106),('password','Zrn5qDfXGklpJ59'),('login','vprok_transfer'),('database','vprok')]"
-# local_dir = '/tmp/tmp/'
-local_dir = ''
+sours_params_s = argv[1]
+local_dir = '/tmp/tmp/'
 
 table = 'tmp_checked'
 
