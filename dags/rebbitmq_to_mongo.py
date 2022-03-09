@@ -1,9 +1,9 @@
 from airflow.decorators import dag
 from datetime import datetime, timedelta
 from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.operators.bash import BashOperator
 from docker.types import Mount
 from airflow.models import Variable
-import json
 
 mongo_connect = Variable.get("mongo_connect", deserialize_json=True)
 mongo_pass = Variable.get("secret_mongo_pass")
@@ -20,11 +20,6 @@ airflow_work_dir = f'/opt/airflow/tmp/{project_name}'
 image = 'airflow_task_python_3.8'
 
 mount_dir = [
-    # Mount(
-    #     source=folder,
-    #     target=working_dir,
-    #     type='bind'
-    # ),
     Mount(
         source=f'{main_folder}/project/{project_name}',
         target=f'{working_dir}/project',
@@ -54,6 +49,18 @@ mount_dir = [
     max_active_runs=1
 )
 def rebbit_to_mongo_etl():
+
+    create_folder = BashOperator(
+        task_id='create_folder',
+        bash_command=f'mkdir -p -m 777 {airflow_work_dir}'
+    )
+
+    delete_folder = BashOperator(
+        task_id='delete_folder',
+        bash_command=f'rm -r {airflow_work_dir}',
+        trigger_rule='none_skipped'
+    )
+
     for rebbitmq in rebbit_srv:
         rebbitmq['password'] = rebbit_pass
         rebbitmq['login'] = rebbit_login
@@ -65,7 +72,7 @@ def rebbit_to_mongo_etl():
             rebbitmq_s = str(list(rebbitmq.items())).replace(', ', ',')
             mongodb_s = str(list(mongodb.items())).replace(', ', ',')
 
-            DockerOperator(
+            rb_mdb = DockerOperator(
                 task_id=f"RM_{rebbitmq['host']}_{rebbitmq['queue']}_M_{mongodb['host']}_{mongodb['database']}".replace(
                     '.tkvprok.ru', '').replace('MDB_WhoIs_queue_', ''),
                 image=image,
@@ -82,6 +89,8 @@ def rebbit_to_mongo_etl():
                 docker_url="unix://var/run/docker.sock",
                 network_mode="bridge"
             )
+
+            create_folder >> rb_mdb >> delete_folder
 
 
 tutorial_etl_dag = rebbit_to_mongo_etl()

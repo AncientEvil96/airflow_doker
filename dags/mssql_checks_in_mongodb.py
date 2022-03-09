@@ -16,8 +16,6 @@ folder = f'{main_folder}/tmp/{project_name}'
 working_dir = '/tmp/tmp'
 airflow_work_dir = f'/opt/airflow/tmp/{project_name}'
 image = 'airflow_task_python_3.8'
-
-# The start of the data interval as YYYYMMDD
 mount_dir_server = f'{folder}'
 
 mount_dir = [

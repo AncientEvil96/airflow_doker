@@ -4,13 +4,14 @@ from airflow.operators.bash import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 from airflow.models import Connection
+from airflow.models import Variable
 
 ms_connect = Connection.get_connection_from_secrets(conn_id='MS_TBP_WORK')
 my_connect = Connection.get_connection_from_secrets(conn_id='MariaDB_VPROK')
+main_folder = Variable.get('main_folder')
 
 user_folder = 'deus'
 project_name = 'for_sites_netcat'
-main_folder = f'/home/{user_folder}/PycharmProjects/airflow_doker'
 folder = f'{main_folder}/tmp/{project_name}'
 working_dir = '/tmp/tmp'
 airflow_work_dir = f'/opt/airflow/tmp/{project_name}'
@@ -71,7 +72,7 @@ def for_sites_netcat():
 
     create_folder = BashOperator(
         task_id='create_folder',
-        bash_command=f'mkdir -m 777 {airflow_work_dir}'
+        bash_command=f'mkdir -p -m 777 {airflow_work_dir}'
     )
 
     e_subdivision_tbp = DockerOperator(
