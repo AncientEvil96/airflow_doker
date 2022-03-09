@@ -55,7 +55,7 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
-    # _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pika pymongo fastparquet apache-airflow-providers-microsoft-mssql apache-airflow-providers-mongo apache-airflow-providers-odbc apache-airflow-providers-ssh apache-airflow-providers-mysql apache-airflow-providers-postgres apache-airflow-providers-docker apache-airflow-providers-jdbc}
+#     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pika pymongo fastparquet  apache-airflow-providers-mysql apache-airflow-providers-postgres apache-airflow-providers-docker apache-airflow-providers-jdbc}
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- apache-airflow-providers-docker}
   volumes:
     - ./dags:/opt/airflow/dags:rw
