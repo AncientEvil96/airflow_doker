@@ -12,7 +12,8 @@ RUN apt-get update -y && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get install -y python3.8 && \
     apt-get install -y python3-pip &&\
-    apt-get install -y curl
+    apt-get install -y curl &&\
+    apt-get install -y build-essential libssl-dev libffi-dev python3.8-dev unixodbc-dev libpq-dev
 
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 RUN curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list
@@ -25,8 +26,4 @@ RUN cd /usr/bin && \
 
 WORKDIR /tmp/tmp
 
-RUN python -m pip install --upgrade pip
-RUN apt-get install -y build-essential libssl-dev libffi-dev python3.8-dev unixodbc-dev
-
 RUN pip install -r requirements.txt
-
