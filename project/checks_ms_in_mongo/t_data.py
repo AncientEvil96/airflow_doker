@@ -22,7 +22,6 @@ def get_date(date_):
 
 
 def transform():
-    t_begin = get_date(begin_dt)
 
     files = sorted(
         list(map(str, list(Path(local_dir).rglob(f'*.parquet.gzip')))))

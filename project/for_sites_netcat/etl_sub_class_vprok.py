@@ -162,14 +162,27 @@ if __name__ == '__main__':
     target.query_to_base(
         f"""
             INSERT INTO Sub_Class
-                (Subdivision_ID,
-                 Catalogue_ID,
-                 Class_ID,
-                 Sub_Class_Name,
-                 Checked,
-                 CustomSettings,
-                 EnglishName)
-                 select * from {table};
+            (Edit_Class_Template,
+             `Condition`,
+             ConditionQuery,
+             Subdivision_ID,
+             Catalogue_ID,
+             Class_ID,
+             Sub_Class_Name,
+             Checked,
+             CustomSettings,
+             EnglishName)
+            select 0  as Edit_Class_Template,
+                   '' as `Condition`,
+                   '' as ConditionQuery,
+                   Subdivision_ID,
+                   Catalogue_ID,
+                   Class_ID,
+                   Sub_Class_Name,
+                   Checked,
+                   CustomSettings,
+                   EnglishName
+            from {table} as tmp_sub_class;
         """
     )
 

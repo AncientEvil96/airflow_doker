@@ -28,13 +28,6 @@ if __name__ == '__main__':
 
     t_begin = get_date(begin_dt)
 
-    # load_list = ''
-    # try:
-    #     load_list = Path(local_dir).rglob(f'checks.parquet.gzip')[0]
-    # except FileNotFoundError as err:
-    #     print(err, f'{local_dir}checks.parquet.gzip not file checks.parquet.gzip')
-    #     exit(1)
-
     df = pd.read_parquet(f'{local_dir}checks.parquet.gzip')
     df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(
         lambda x: [list(i) for i in x])

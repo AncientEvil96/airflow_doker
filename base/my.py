@@ -34,34 +34,37 @@ class MySQL:
             database=self.database)
 
     def select_to_df(self, query: str) -> pd.DataFrame:
+
+        print(query)
+
         """
         получение данных в формате DataFrame
         :return: DataFrame
         """
         return pd.read_sql(query, self.connect)
 
-    # def load_csv_to_base(self, query: str, file_name) -> str:
-    #     """
-    #     получение данных в файле parquet
-    #     :return: file path
-    #     """
-    #
-    #     query = """
-    #
-    #     """
-    #
-    #     try:
-    #         with connect(
-    #                 host=self.host,
-    #                 user=self.__login,
-    #                 password=self.__password,
-    #                 port=self.port,
-    #                 database=self.database
-    #         ) as cnxn:
-    #             cursor = cnxn.cursor()
-    #             cursor.execute(query)
-    #     except Error as e:
-    #         print(e)
+    def load_csv_to_base(self, query: str, file_name) -> str:
+        """
+        получение данных в файле parquet
+        :return: file path
+        """
+
+        query = """
+
+        """
+
+        try:
+            with connect(
+                    host=self.host,
+                    user=self.__login,
+                    password=self.__password,
+                    port=self.port,
+                    database=self.database
+            ) as cnxn:
+                cursor = cnxn.cursor()
+                cursor.execute(query)
+        except Error as e:
+            print(e)
 
     def load_many_to_base(self, query: str, load_list):
         """

@@ -38,8 +38,8 @@ def extract_products(sourse):
                 ,CONVERT(decimal(10,2), [_Fld248]) as purchase_price
                 ,CONVERT(decimal(10,2), [_Fld376]) as cost_price
                 ,[_Fld644] as code_markings
-            FROM [ChekKKM].[dbo].[_Document16_VT24] as [_Document16_VT24]
-                INNER JOIN [ChekKKM].[dbo].[_Document16] as [_Document16]
+            FROM [_Document16_VT24] as [_Document16_VT24]
+                INNER JOIN [_Document16] as [_Document16]
                 ON [_Document16].[_IDRRef] = [_Document16_VT24].[_Document16_IDRRef]
             WHERE [_Posted] = 1 and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
             """

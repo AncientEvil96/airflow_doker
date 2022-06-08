@@ -1,6 +1,7 @@
 # Environments
 .env
 .venv
+.ssh/
 env/
 venv/
 ENV/
@@ -9,3 +10,5 @@ logs/
 *.parquet.gzip
 variables
 *.tar.gz
+*.csv
+*.json

@@ -1,1 +1,37 @@
-# airflow
+# vprok_airflow_projects
+
+## project:
+
+### 1. checks_ms_in_mongo
+
+Checks from mssql ChekKKM base ETL for mongodb checks_info.checks of 2022 to today.
+Start everyday 00:10
+
+### 2. checks_ms_in_mongo_20_21
+
+Checks from mssql ChekKKM base ETL for mongodb checks_info.checks of 2020 to 2022 years.
+Start of every day.
+
+### 3. for_sites_netcat
+
+Data for netcat every day at 00:10.
+
+### 4. mongo_stocks
+
+Directory stocks in mongodb. Integration with Yandex + 1C.
+
+### 5. rebbitmq_to_mongo
+
+Load customers data from rabbit to mongodb info_checks.customers
+
+### 6. tbp_consultant_to_ch_full
+
+Load data tbp.consultant to clickhouse every day.
+
+### 7. update_amount_tbp_delta
+
+Delta amount updates every day, every minute.
+
+### 8. check_amount_tbp_full
+
+Full amount comparison and updates every night at 00:10 a.m. 

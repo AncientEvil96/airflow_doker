@@ -23,6 +23,18 @@ class Rebbit:
     def set_queue(self, queue):
         self.rebbit_queue = queue
 
+    def send_rebbit(self, send_list):
+        rmq_url_connection_str = f'amqp://{self.__rebbit_login}:{self.__rebbit_password}@{self.rebbit_host}:5672'
+        rmq_parameters = pika.URLParameters(rmq_url_connection_str)
+        with pika.BlockingConnection(rmq_parameters) as rmq_connection:
+            rmq_channel = rmq_connection.channel()
+            for row in send_list:
+                rmq_channel.basic_publish(
+                    exchange=self.rebbit_queue,
+                    routing_key=self.rebbit_queue,
+                    body=json.dumps(row, ensure_ascii=False)
+                )
+
     def _on_message(self, rmq_channel):
         """
         :param rmq_channel:

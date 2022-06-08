@@ -7,6 +7,7 @@ import re
 sours_params_s = argv[1]
 local_dir = '/tmp/tmp/'
 
+
 def get_df(key_):
     files = list(map(str, list(Path(f'{local_dir}').rglob(f'{key_}.parquet.gzip'))))
     file = [x for x in files if re.match(f'.*{key_}*', x)][0] if any(
@@ -44,15 +45,15 @@ if __name__ == '__main__':
     target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
         f"""
-        CREATE OR REPLACE table {table}
+        CREATE TEMPORARY table {table}
         (
             Checked        tinyint,
             shop_id        int,
-            latitude       char(255),
-            longitude      char(255),
+            latitude       char(10),
+            longitude      char(10),
             Adress         char(255),
             House          char(255),
-            Email          char(255),
+            Email          char(50),
             Title          char(255),
             City_name      varchar(255),
             City_id        int,
@@ -86,12 +87,12 @@ if __name__ == '__main__':
 
     print('создаем города')
     target.query_to_base(
-        """
+        f"""
         INSERT INTO Classificator_City_presence
         (City_presence_Name,
          Checked)
         SELECT City_name, max(tmp_stock.Checked)
-        FROM tmp_stock
+        FROM {table} as tmp_stock
                  LEFT JOIN Classificator_City_presence as City
                            ON tmp_stock.City_name = City.City_presence_Name
         WHERE City.City_presence_ID is null
@@ -101,13 +102,13 @@ if __name__ == '__main__':
 
     print('удаление городов')
     target.query_to_base(
-        """
+        f"""
         DELETE
         FROM Classificator_City_presence
         WHERE City_presence_Name in (
             SELECT City_presence_Name
             FROM Classificator_City_presence as City
-                     LEFT JOIN tmp_stock
+                     LEFT JOIN {table} as tmp_stock
                                ON tmp_stock.City_name = City.City_presence_Name
             WHERE tmp_stock.City_name is null
             GROUP BY City_name
@@ -117,8 +118,8 @@ if __name__ == '__main__':
 
     print('обновим ID')
     target.query_to_base(
-        """
-        UPDATE tmp_stock
+        f"""
+        UPDATE {table} as tmp_stock
             INNER JOIN Classificator_City_presence as tt1 ON City_name = City_presence_Name
         SET tmp_stock.City_id = tt1.City_presence_ID;
         """
@@ -126,23 +127,27 @@ if __name__ == '__main__':
 
     print('обновим видимость городов')
     target.query_to_base(
-        """
+        f"""
         UPDATE Classificator_City_presence
             INNER JOIN (SELECT City_id as City_id, max(tmp_stock.Checked) as Checked
-                        FROM tmp_stock
+                        FROM {table} as tmp_stock
                                  LEFT JOIN Classificator_City_presence as City
                                            ON tmp_stock.City_name = City.City_presence_Name
                         GROUP BY City_name) as tt1 ON City_id = City_presence_ID
         SET Classificator_City_presence.Checked = tt1.Checked
-        WHERE Classificator_City_presence.Checked =! tt1.Checked;
+        WHERE Classificator_City_presence.Checked <> tt1.Checked;
         """
     )
 
     print('добавим данные по магазинам')
     target.query_to_base(
-        """
+        f"""
         INSERT INTO Message169
-        (Checked,
+        (User_ID,
+         Keyword,
+         Created,
+         LastUser_ID,
+         Checked,
          shop_id,
          latitude,
          longitude,
@@ -153,7 +158,11 @@ if __name__ == '__main__':
          City,
          Subdivision_ID,
          Sub_Class_ID)
-        SELECT tmp_stock.Checked,
+        SELECT 0 as User_ID,
+               '' as Keyword,
+               now() as Created,
+               0 as LastUser_ID,
+               tmp_stock.Checked,
                tmp_stock.shop_id,
                tmp_stock.latitude,
                tmp_stock.longitude,
@@ -164,18 +173,18 @@ if __name__ == '__main__':
                tmp_stock.City_id,
                tmp_stock.Subdivision_ID,
                tmp_stock.Sub_Class_ID
-        FROM tmp_stock
-        LEFT JOIN Message169
-        ON Message169.shop_id = tmp_stock.shop_id
+        FROM {table} as tmp_stock
+                 LEFT JOIN Message169
+                           ON Message169.shop_id = tmp_stock.shop_id
         WHERE Message169.Message_ID is null;
         """
     )
 
     print('проверка + обновление данных')
     target.query_to_base(
-        """
+        f"""
         UPDATE Message169
-            INNER JOIN tmp_stock ON tmp_stock.shop_id = Message169.shop_id
+            INNER JOIN {table} as tmp_stock  ON tmp_stock.shop_id = Message169.shop_id
         SET Message169.Checked        = tmp_stock.Checked,
             Message169.shop_id        = tmp_stock.shop_id,
             Message169.latitude       = tmp_stock.latitude,
@@ -187,17 +196,17 @@ if __name__ == '__main__':
             Message169.City           = tmp_stock.City_id,
             Message169.Subdivision_ID = tmp_stock.Subdivision_ID,
             Message169.Sub_Class_ID   = tmp_stock.Sub_Class_ID
-        WHERE not (Message169.Checked = tmp_stock.Checked
-            AND Message169.shop_id = tmp_stock.shop_id
-            AND Message169.latitude = tmp_stock.latitude
-            AND Message169.longitude = tmp_stock.longitude
-            AND Message169.Adress = tmp_stock.Adress
-            AND Message169.House = tmp_stock.House
-            AND Message169.Email = tmp_stock.Email
-            AND Message169.Title = tmp_stock.Title
-            AND Message169.City = tmp_stock.City_id
-            AND Message169.Subdivision_ID = tmp_stock.Subdivision_ID
-            AND Message169.Sub_Class_ID = tmp_stock.Sub_Class_ID)
+        WHERE not (ifnull(Message169.Checked, 0) = tmp_stock.Checked
+            AND ifnull(Message169.shop_id, 0) = tmp_stock.shop_id
+            AND ifnull(Message169.latitude, '') = tmp_stock.latitude
+            AND ifnull(Message169.longitude, '') = tmp_stock.longitude
+            AND ifnull(Message169.Adress, '') = tmp_stock.Adress
+            AND ifnull(Message169.House, '') = tmp_stock.House
+            AND ifnull(Message169.Email, '') = tmp_stock.Email
+            AND ifnull(Message169.Title, '') = tmp_stock.Title
+            AND ifnull(Message169.City, 0) = tmp_stock.City_id
+            AND ifnull(Message169.Subdivision_ID, 0) = tmp_stock.Subdivision_ID
+            AND ifnull(Message169.Sub_Class_ID, 0) = tmp_stock.Sub_Class_ID);
         """
     )
 

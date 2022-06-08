@@ -1,7 +1,6 @@
 from sys import argv
 import pandas as pd
 from datetime import datetime
-from pathlib import Path
 from base.mongo import Mongo
 
 begin_dt, mongodb_s = argv[1:]
@@ -21,20 +20,12 @@ def get_date(date_):
 
 
 if __name__ == '__main__':
-    print(begin_dt, mongodb_s)
     s = str(mongodb_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
         ',')
     mongodb = dict(zip(s[::2], s[1::2]))
 
     target = Mongo(params=mongodb)
     t_begin = get_date(begin_dt)
-
-    # load_list = ''
-    # try:
-    #     load_list = Path(local_dir).rglob(f'checks.parquet.gzip')[0]
-    # except FileNotFoundError as err:
-    #     print(err, f'{local_dir}checks.parquet.gzip not file checks.parquet.gzip')
-    #     exit(1)
 
     df = pd.read_parquet(f'{local_dir}checks.parquet.gzip')
     df[['products', 'payments', 'lottery_tickets']] = df[['products', 'payments', 'lottery_tickets']].apply(

@@ -44,8 +44,8 @@ if __name__ == '__main__':
                  , _Reference12._Fld746                                                         as Email
                  , _Reference12._Description                                                    as Title
                  , City._Description                                                            as City
-                 , 45                                                                           as Subdivision_ID
-                 , 47                                                                           as Sub_Class_ID
+                 , 46                                                                           as Subdivision_ID
+                 , 48                                                                           as Sub_Class_ID
             FROM _Reference12
                      INNER JOIN _Reference12 as Parent
                                 ON _Reference12._ParentIDRRef = Parent._IDRRef

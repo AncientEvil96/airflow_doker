@@ -29,17 +29,11 @@ def get_load_list():
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].fillna(0)
     df['Parent_Sub_ID'] = df['Parent_Sub_ID'].astype('int')
 
-    # print(df.dtypes)
-
     return list(df.itertuples(index=False, name=None))
 
 
 if __name__ == '__main__':
-    # print(sours_params_s)
     load_list = get_load_list()
-
-    # for i in load_list:
-    #     print(i)
 
     s = str(sours_params_s).replace('[', '').replace(']', '').replace("'", '').replace('(', '').replace(')', '').split(
         ',')
@@ -50,19 +44,14 @@ if __name__ == '__main__':
     )
 
     table = 'tmp_subdivision_netcat'
-    # try:
     target.connection_init()
-    # except Exception as err:
-        # print(err)
-
-    # exit(0)
 
     print('создаем временную таблицу')
 
     target.query_to_base(f'drop table if exists {table};')
     target.query_to_base(
         f"""
-        create OR REPLACE temporary table {table}
+        create temporary table {table}
         (
             TBP_ID           int                                                                      not null,
             Subdivision_Name varchar(255) default ''                                                  not null,
@@ -137,7 +126,7 @@ if __name__ == '__main__':
                                      Hidden_URL)
             select tt1.Subdivision_Name                                                          as Subdivision_Name,
                    tt1.EnglishName                                                               as EnglishName,
-                   IFNULL(Parent.Subdivision_ID, IF(tt1.parent_id = 0, tt1.Parent_Sub_ID, null)) as Parent_Sub_ID,
+                   IFNULL(Parent.Subdivision_ID, IF(tt1.parent_id = 0, tt1.Parent_Sub_ID, 0)) as Parent_Sub_ID,
                    tt1.Catalogue_ID                                                              as Catalogue_ID,
                    tt1.TBP_ID                                                                    as Priority,
                    tt1.menu_pic                                                                  as menu_pic,
@@ -263,5 +252,3 @@ if __name__ == '__main__':
     )
 
     target.connection_close()
-
-

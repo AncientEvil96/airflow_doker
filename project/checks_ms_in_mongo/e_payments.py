@@ -30,8 +30,8 @@ def extract_payments(sourse):
                 ,CONVERT(decimal(10,2), [_Fld94]) as discount
                 ,[_Fld95] as gift_sertificate
                 ,[_Fld96] as bankcard
-            FROM [ChekKKM].[dbo].[_Document16_VT88] as [_Document16_VT88]
-                INNER JOIN [ChekKKM].[dbo].[_Document16] as [_Document16]
+            FROM [_Document16_VT88] as [_Document16_VT88]
+                INNER JOIN [_Document16] as [_Document16]
                 ON [_Document16].[_IDRRef] = [_Document16_VT88].[_Document16_IDRRef]
             WHERE [_Posted] = 1 and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
             """

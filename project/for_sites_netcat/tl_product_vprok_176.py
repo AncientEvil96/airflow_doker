@@ -42,7 +42,7 @@ if __name__ == '__main__':
     target.connection_init()
     target.query_to_base(
         f"""
-        CREATE OR REPLACE TEMPORARY TABLE {table}
+        CREATE TEMPORARY TABLE {table}
             (
                 parent_id       int          default 0,
                 Article         int          not null UNIQUE,
@@ -189,6 +189,7 @@ if __name__ == '__main__':
         f"""
         INSERT INTO {table_product}
         (Article,
+         Created,
          Sub_Class_ID,
          Subdivision_ID,
          Name,
@@ -216,6 +217,7 @@ if __name__ == '__main__':
          ncSMO_Description,
          ncSMO_Title)
         SELECT Product.Article           as Article,
+               NOW()                     as Created,
                Product.Sub_Class_ID      as Sub_Class_ID,
                Product.Subdivision_ID    as Subdivision_ID,
                Product.Name              as Name,

@@ -1,5 +1,5 @@
 from airflow.decorators import dag
-from datetime import datetime, timedelta
+from datetime import datetime
 from airflow.operators.bash import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
@@ -10,7 +10,6 @@ ms_connect = Connection.get_connection_from_secrets(conn_id='MS_TBP_WORK')
 my_connect = Connection.get_connection_from_secrets(conn_id='MariaDB_VPROK')
 main_folder = Variable.get('main_folder')
 
-user_folder = 'deus'
 project_name = 'for_sites_netcat'
 folder = f'{main_folder}/tmp/{project_name}'
 working_dir = '/tmp/tmp'
@@ -46,7 +45,7 @@ mount_dir = [
     },
     dag_id='for_sites_netcat',
     tags=['netcat', 'vprok', 'compass'],
-    schedule_interval=timedelta(days=1),
+    schedule_interval='10 3 * * *',
     start_date=datetime(2022, 1, 28),
     catchup=False,
     max_active_runs=1
@@ -72,7 +71,39 @@ def for_sites_netcat():
 
     create_folder = BashOperator(
         task_id='create_folder',
-        bash_command=f'mkdir -p -m 777 {airflow_work_dir}'
+        bash_command=f'bash -c "mkdir -p -m 777 {airflow_work_dir}"'
+    )
+
+    e_stock = DockerOperator(
+        task_id='e_stock',
+        image=image,
+        container_name='e_subdivision_tbp_{{ task_instance.job_id }}',
+        api_version='1.41',
+        auto_remove=True,
+        environment={
+            'MS': ms_s
+        },
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command=f'bash -c "python project/e_stock.py $MS"',
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge"
+    )
+
+    tl_stock = DockerOperator(
+        task_id='tl_stock',
+        image=image,
+        container_name='tl_subdivision_vprok_{{ task_instance.job_id }}',
+        api_version='1.41',
+        auto_remove=True,
+        environment={
+            'MY': my_s
+        },
+        mounts=mount_dir,
+        working_dir=working_dir,
+        command=f'bash -c "python project/tl_stock.py $MY"',
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge"
     )
 
     e_subdivision_tbp = DockerOperator(
@@ -189,11 +220,12 @@ def for_sites_netcat():
 
     delete_folder = BashOperator(
         task_id='delete_folder',
-        bash_command=f'rm -r {airflow_work_dir}',
+        bash_command=f'bash -c "rm -r {airflow_work_dir}"',
         trigger_rule='none_skipped'
     )
 
     create_folder >> e_subdivision_tbp >> tl_subdivision_vprok >> etl_sub_class_vprok
+    create_folder >> e_stock >> tl_stock >> delete_folder
     etl_sub_class_vprok >> etl_cheked >> e_product_tbp
     e_product_tbp >> [tl_product_vprok_173, tl_product_vprok_176] >> delete_folder
 

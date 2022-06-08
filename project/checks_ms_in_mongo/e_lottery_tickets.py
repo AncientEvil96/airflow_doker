@@ -27,8 +27,8 @@ def extract_lottery_tickets(sourse):
                   ,[_LineNo110] as line
                   ,CONVERT(int, [_Fld111]) as number
                   ,CONVERT(int, [_Fld116]) as employee_ticket_number
-            FROM [ChekKKM].[dbo].[_Document16_VT109] as [_Document16_VT109]
-                INNER JOIN [ChekKKM].[dbo].[_Document16] as [_Document16]
+            FROM [_Document16_VT109] as [_Document16_VT109]
+                INNER JOIN [_Document16] as [_Document16]
                 ON [_Document16].[_IDRRef] = [_Document16_VT109].[_Document16_IDRRef]
             WHERE [_Posted] = 1 and [_Document16].[_Date_Time] between '{str(t_begin)}' and '{str(t_end)}'
             """

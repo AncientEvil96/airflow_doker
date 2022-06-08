@@ -62,7 +62,7 @@ if __name__ == '__main__':
         f"""
         UPDATE Subdivision
         SET Subdivision.Checked = 1
-        WHERE Subdivision_ID in (SELECT Subdivision_ID FROM {table} GROUP BY Subdivision_ID);
+        WHERE TBP_ID > 0 AND Subdivision_ID in (SELECT Subdivision_ID FROM {table} GROUP BY Subdivision_ID);
         """
     )
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         f"""
         UPDATE Subdivision
         SET Subdivision.Checked = 0
-        WHERE Subdivision_ID not in (SELECT Subdivision_ID FROM {table} GROUP BY Subdivision_ID);
+        WHERE TBP_ID > 0 AND Subdivision_ID not in (SELECT Subdivision_ID FROM {table} GROUP BY Subdivision_ID);
         """
     )
 

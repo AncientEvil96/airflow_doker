@@ -43,7 +43,7 @@ mount_dir = [
     },
     dag_id=project_name,
     tags=['rebbitmq', 'mongo', 'customer', 'checks'],
-    schedule_interval=timedelta(minutes=1),
+    schedule_interval=timedelta(minutes=10),
     start_date=datetime(2022, 3, 1),
     catchup=False,
     max_active_runs=1

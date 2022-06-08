@@ -33,6 +33,7 @@ class MsSQL:
         :return: DataFrame
         """
 
+        self.print_select(query)
         with pyodbc.connect(self.conn_ms) as cnxn:
             return pd.read_sql(query, cnxn)
 
@@ -41,11 +42,24 @@ class MsSQL:
         получение данных в файле parquet
         :return: file path
         """
-
+        self.print_select(query)
         with pyodbc.connect(self.conn_ms) as cnxn:
             sf = File(f'{file_name}')
             df = pd.read_sql(query, cnxn)
             return sf.create_file_parquet(
+                df=df
+            )
+
+    def select_to_csv(self, query, file_name) -> str:
+        """
+        получение данных в файле parquet
+        :return: file path
+        """
+        self.print_select(query)
+        with pyodbc.connect(self.conn_ms) as cnxn:
+            sf = File(f'{file_name}')
+            df = pd.read_sql(query, cnxn)
+            return sf.create_file_csv(
                 df=df
             )
 
@@ -55,6 +69,10 @@ class MsSQL:
         :return: list
         """
 
+        self.print_select(query)
         with pyodbc.connect(self.conn_ms) as cnxn:
             df = pd.read_sql(query, cnxn)
             return df.to_dict('records')
+
+    def print_select(self, query):
+        print('\n', query)
